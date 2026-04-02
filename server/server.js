@@ -231,7 +231,19 @@ function serializeCards(cards) {
     rotated: !!card.rotated
   }));
 }
+function serializeCard(card) {
+  if (!card) return null;
 
+  return {
+    id: card.id,
+    name: card.name,
+    type: card.type,
+    deckKey: card.deckKey,
+    ownerRole: card.ownerRole,
+    faceDown: !!card.faceDown,
+    rotated: !!card.rotated
+  };
+}
 function buildMythicCard(deckKey, ownerRole) {
   const deck = SERVER_DECKS[deckKey];
   if (!deck) return null;
@@ -577,12 +589,21 @@ io.on("connection", (socket) => {
       }
 
       const drawnTrap = playerState.trapDeck.pop();
-      playerState.hand.push(drawnTrap);
+playerState.hand.push(drawnTrap);
 
-      console.log(`Sala ${roomId}: ${player.role} puxou 1 carta do deck de armadilha`);
-      emitRoomState(roomId, room);
-      emitPrivatePileView(socket, player.role, playerState, "trapDeck");
-      return;
+io.to(roomId).emit("visualAction", {
+  kind: "draw",
+  card: serializeCard(drawnTrap),
+  fromPlayer: player.role,
+  fromZone: "trapDeck",
+  toPlayer: player.role,
+  toZone: "hand"
+});
+
+console.log(`Sala ${roomId}: ${player.role} puxou 1 carta do deck de armadilha`);
+emitRoomState(roomId, room);
+emitPrivatePileView(socket, player.role, playerState, "trapDeck");
+return;
     }
 
     if (playerState.mainDeck.length === 0) {
@@ -593,11 +614,20 @@ io.on("connection", (socket) => {
     }
 
     const drawnCard = playerState.mainDeck.pop();
-    playerState.hand.push(drawnCard);
+playerState.hand.push(drawnCard);
 
-    console.log(`Sala ${roomId}: ${player.role} comprou 1 carta`);
-    emitRoomState(roomId, room);
-    emitPrivatePileView(socket, player.role, playerState, "mainDeck");
+io.to(roomId).emit("visualAction", {
+  kind: "draw",
+  card: serializeCard(drawnCard),
+  fromPlayer: player.role,
+  fromZone: "mainDeck",
+  toPlayer: player.role,
+  toZone: "hand"
+});
+
+console.log(`Sala ${roomId}: ${player.role} comprou 1 carta`);
+emitRoomState(roomId, room);
+emitPrivatePileView(socket, player.role, playerState, "mainDeck");
   });
 
   socket.on("moveCardSandbox", ({ roomId, fromPlayer, fromZone, toPlayer, toZone, cardId }) => {
@@ -655,11 +685,20 @@ io.on("connection", (socket) => {
 
     toArray.push(card);
 
-    console.log(
-      `Sala ${roomId}: ${player.role} moveu carta ${cardId} de ${fromPlayer}.${actualFromZone} para ${toPlayer}.${toZone}`
-    );
+io.to(roomId).emit("visualAction", {
+  kind: "move",
+  card: serializeCard(card),
+  fromPlayer,
+  fromZone: actualFromZone,
+  toPlayer,
+  toZone
+});
 
-    emitRoomState(roomId, room);
+console.log(
+  `Sala ${roomId}: ${player.role} moveu carta ${cardId} de ${fromPlayer}.${actualFromZone} para ${toPlayer}.${toZone}`
+);
+
+emitRoomState(roomId, room);
 
     if (fromPlayer === player.role && (actualFromZone === "mainDeck" || actualFromZone === "trapDeck")) {
       emitPrivatePileView(socket, player.role, fromPlayerState, actualFromZone);
@@ -705,7 +744,55 @@ io.on("connection", (socket) => {
     card.rotated = !!rotated;
     emitRoomState(roomId, room);
   });
+  socket.on("triggerEffectVisual", ({ roomId, playerKey, zoneKey, cardId }) => {
+    const result = getRoomAndPlayer(roomId, socket.id);
+    if (!result) return;
 
+    const { room, player } = result;
+    if (!room.matchState) return;
+    if (playerKey !== player.role) return;
+
+    const zone = getZoneArray(room.matchState.players[playerKey], zoneKey);
+    if (!zone) return;
+
+    const card = zone.find((c) => c.id === cardId);
+    if (!card) return;
+    if (card.faceDown) return;
+
+    io.to(roomId).emit("effectAnimation", {
+      playerKey,
+      zoneKey,
+      cardId
+    });
+  });
+    socket.on(
+    "declareAttackVisual",
+    ({ roomId, fromPlayer, fromZone, cardId, targetPlayer, targetZone }) => {
+      const result = getRoomAndPlayer(roomId, socket.id);
+      if (!result) return;
+
+      const { room, player } = result;
+      if (!room.matchState) return;
+      if (fromPlayer !== player.role) return;
+
+      const sourceZone = getZoneArray(room.matchState.players[fromPlayer], fromZone);
+      if (!sourceZone) return;
+
+      const card = sourceZone.find((c) => c.id === cardId);
+      if (!card) return;
+
+      const destinationZone = getZoneArray(room.matchState.players[targetPlayer], targetZone);
+      if (!destinationZone && targetZone !== "hand") return;
+
+      io.to(roomId).emit("attackAnimation", {
+        fromPlayer,
+        fromZone,
+        cardId,
+        targetPlayer,
+        targetZone
+      });
+    }
+  );
   socket.on("selectCardSync", ({ roomId, cardId }) => {
     const result = getRoomAndPlayer(roomId, socket.id);
     if (!result) return;

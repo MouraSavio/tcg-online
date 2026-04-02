@@ -925,7 +925,212 @@ function animateResultBox(elementId) {
   void el.offsetWidth;
   el.classList.add("animating");
 }
+function serializeAnimationCard(card) {
+  if (!card) return null;
 
+  return {
+    id: card.id,
+    name: card.name,
+    image: card.image || "",
+    type: card.type,
+    owner: card.owner || card.originalOwner || null,
+    originalOwner: card.originalOwner || card.owner || null,
+    faceDown: !!card.faceDown,
+    rotated: !!card.rotated
+  };
+}
+
+function isPileZoneForAnimation(zoneKey) {
+  const uiZone = serverZoneToUiZone(zoneKey);
+  return ["deckPile", "trapDeckPile", "discardPile"].includes(uiZone);
+}
+
+function getAnimationHost() {
+  return document.body;
+}
+
+function getZoneElementForAnimation(playerKey, zoneKey) {
+  const uiZone = serverZoneToUiZone(zoneKey);
+
+  if (uiZone === "hand") {
+    return document.getElementById(getHandElementIdForVisualRole(playerKey));
+  }
+
+  return document.getElementById(`zone-${playerKey}-${uiZone}`);
+}
+
+function getCardElementForAnimation(cardId) {
+  if (!cardId) return null;
+  return document.getElementById(`card-${cardId}`);
+}
+
+function getAnimationRect(playerKey, zoneKey, cardId) {
+  const uiZone = serverZoneToUiZone(zoneKey);
+
+  if (uiZone === "hand") {
+    const cardEl = getCardElementForAnimation(cardId);
+    if (cardEl) return cardEl.getBoundingClientRect();
+
+    const handEl = document.getElementById(getHandElementIdForVisualRole(playerKey));
+    return handEl ? handEl.getBoundingClientRect() : null;
+  }
+
+  if (!isPileZoneForAnimation(uiZone)) {
+    const cardEl = getCardElementForAnimation(cardId);
+    if (cardEl) return cardEl.getBoundingClientRect();
+  }
+
+  const zoneEl = document.getElementById(`zone-${playerKey}-${uiZone}`);
+  return zoneEl ? zoneEl.getBoundingClientRect() : null;
+}
+
+function shouldHideAnimationCard(card, ownerRole, destinationZone) {
+  const uiZone = serverZoneToUiZone(destinationZone);
+  if (!card) return true;
+  if (card.faceDown) return true;
+  if (uiZone === "hand" && ownerRole && ownerRole !== myRole) return true;
+  return false;
+}
+
+function buildAnimationCardElement(card, hidden) {
+  const el = document.createElement("div");
+  el.className = "card";
+  el.style.position = "fixed";
+  el.style.left = "0px";
+  el.style.top = "0px";
+  el.style.margin = "0";
+  el.style.zIndex = "6000";
+  el.style.pointerEvents = "none";
+  el.style.boxShadow = "0 12px 30px rgba(0,0,0,0.45)";
+
+  if (card?.rotated) {
+    el.classList.add("rotated");
+  }
+
+  if (hidden) {
+    const back = document.createElement("div");
+    back.className = "card-back";
+    back.textContent = "TCG";
+    el.appendChild(back);
+    return el;
+  }
+
+  if (card?.image) {
+    const img = document.createElement("img");
+    img.className = "card-image";
+    img.src = card.image;
+    img.alt = card.name || "Carta";
+    img.draggable = false;
+
+    img.onerror = () => {
+      if (img.parentNode === el) {
+        img.replaceWith(createPlaceholder(card.name || "Carta"));
+      }
+    };
+
+    el.appendChild(img);
+    return el;
+  }
+
+  el.appendChild(createPlaceholder(card?.name || "Carta"));
+  return el;
+}
+
+function animateCardTravel(payload) {
+  if (!payload) return;
+
+  const boardScreen = document.getElementById("boardScreen");
+  if (!boardScreen || !boardScreen.classList.contains("active")) return;
+
+  const {
+    card,
+    fromPlayer,
+    fromZone,
+    toPlayer,
+    toZone
+  } = payload;
+
+  const sourceRect = getAnimationRect(fromPlayer, fromZone, card?.id);
+  const targetRect = getAnimationRect(toPlayer, toZone, card?.id);
+
+  if (!sourceRect || !targetRect) return;
+
+  const ownerRole = card?.originalOwner || card?.owner || toPlayer;
+  const hidden = shouldHideAnimationCard(card, ownerRole, toZone);
+
+  const sourceCardEl =
+    !isPileZoneForAnimation(fromZone) && serverZoneToUiZone(fromZone) !== "hand"
+      ? getCardElementForAnimation(card?.id)
+      : getCardElementForAnimation(card?.id);
+
+  let ghost = null;
+
+  if (sourceCardEl && sourceCardEl.classList.contains("card")) {
+    ghost = sourceCardEl.cloneNode(true);
+    ghost.removeAttribute("id");
+    ghost.style.position = "fixed";
+    ghost.style.pointerEvents = "none";
+    ghost.style.zIndex = "6000";
+    ghost.style.margin = "0";
+  } else {
+    ghost = buildAnimationCardElement(card, hidden);
+  }
+
+  const width = sourceCardEl && sourceCardEl.classList.contains("card") ? sourceRect.width : 115;
+  const height = sourceCardEl && sourceCardEl.classList.contains("card") ? sourceRect.height : 161;
+
+  ghost.style.width = `${width}px`;
+  ghost.style.height = `${height}px`;
+
+  const startLeft = sourceRect.left + sourceRect.width / 2 - width / 2;
+  const startTop = sourceRect.top + sourceRect.height / 2 - height / 2;
+  const endLeft = targetRect.left + targetRect.width / 2 - width / 2;
+  const endTop = targetRect.top + targetRect.height / 2 - height / 2;
+
+  ghost.style.left = `${startLeft}px`;
+  ghost.style.top = `${startTop}px`;
+  ghost.style.opacity = "0.98";
+  ghost.style.transform = "scale(1)";
+
+  getAnimationHost().appendChild(ghost);
+
+  requestAnimationFrame(() => {
+    ghost.style.transition =
+      "left 360ms ease, top 360ms ease, transform 360ms ease, opacity 360ms ease";
+    ghost.style.left = `${endLeft}px`;
+    ghost.style.top = `${endTop}px`;
+    ghost.style.transform = "scale(0.92)";
+    ghost.style.opacity = "0.2";
+  });
+
+  setTimeout(() => {
+    ghost.remove();
+  }, 420);
+}
+
+function animateEffectByCardId(cardId) {
+  const cardEl = document.getElementById(`card-${cardId}`);
+  if (!cardEl) return;
+
+  cardEl.classList.remove("effect-activated");
+  void cardEl.offsetWidth;
+  cardEl.classList.add("effect-activated");
+
+  setTimeout(() => {
+    cardEl.classList.remove("effect-activated");
+  }, 650);
+}
+
+function animateAttackFromPayload(payload) {
+  if (!payload) return;
+
+  const sourceEl = getCardElementForAnimation(payload.cardId);
+  const targetEl = getZoneElementForAnimation(payload.targetPlayer, payload.targetZone);
+
+  if (!sourceEl || !targetEl) return;
+
+  animateAttackArrow(sourceEl, targetEl);
+}
 function rollDice() {
   socket.emit("rollDice", { roomId });
 }
@@ -1107,7 +1312,7 @@ function createCardElement(card, playerKey, containerKey, options = {}) {
       ? options.canDragOverride
       : playerKey === myRole;
 
-  cardEl.draggable = canDrag && !hidden;
+  cardEl.draggable = canDrag;
 
   cardEl.dataset.cardId = card.id;
   cardEl.dataset.player = playerKey;
@@ -1748,16 +1953,17 @@ function canUseEffect(cardId, playerKey, containerKey) {
 }
 
 function triggerCardEffect(cardId) {
-  const cardEl = document.getElementById(`card-${cardId}`);
-  if (!cardEl) return;
+  const location = findCardLocation(cardId);
 
-  cardEl.classList.remove("effect-activated");
-  void cardEl.offsetWidth;
-  cardEl.classList.add("effect-activated");
+  if (!location) return;
+  if (location.playerKey !== myRole) return;
 
-  setTimeout(() => {
-    cardEl.classList.remove("effect-activated");
-  }, 650);
+  socket.emit("triggerEffectVisual", {
+    roomId,
+    playerKey: location.playerKey,
+    zoneKey: uiZoneToServerZone(location.containerKey),
+    cardId
+  });
 }
 
 function startAttack(cardId, playerKey, containerKey) {
@@ -1773,16 +1979,15 @@ function startAttack(cardId, playerKey, containerKey) {
 function resolveAttack(targetPlayerKey, targetContainerKey) {
   if (!state.attackMode) return;
 
-  const sourceCardEl = document.getElementById(`card-${state.attackMode.cardId}`);
-  const targetZoneEl = document.getElementById(`zone-${targetPlayerKey}-${targetContainerKey}`);
+  socket.emit("declareAttackVisual", {
+    roomId,
+    fromPlayer: state.attackMode.playerKey,
+    fromZone: uiZoneToServerZone(state.attackMode.containerKey),
+    cardId: state.attackMode.cardId,
+    targetPlayer: targetPlayerKey,
+    targetZone: uiZoneToServerZone(targetContainerKey)
+  });
 
-  if (!sourceCardEl || !targetZoneEl) {
-    state.attackMode = null;
-    renderBoard();
-    return;
-  }
-
-  animateAttackArrow(sourceCardEl, targetZoneEl);
   state.attackMode = null;
   renderBoard();
 }
@@ -2029,7 +2234,17 @@ socket.on("selectedCardChanged", ({ role, cardId }) => {
   remoteSelections[role] = cardId || null;
   renderBoard();
 });
+socket.on("visualAction", (payload) => {
+  animateCardTravel(payload);
+});
 
+socket.on("effectAnimation", ({ cardId }) => {
+  animateEffectByCardId(cardId);
+});
+
+socket.on("attackAnimation", (payload) => {
+  animateAttackFromPayload(payload);
+});
 /* DOM EVENTS */
 
 document.addEventListener("click", (event) => {
