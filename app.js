@@ -397,7 +397,8 @@ function hydrateServerCard(card, ownerRole) {
     owner: ownerRole,
     originalOwner: card.ownerRole || ownerRole,
     faceDown: !!card.faceDown,
-    rotated: !!card.rotated
+    rotated: !!card.rotated,
+    markers: Number(card.markers || 0)
   };
 }
 
@@ -1367,7 +1368,12 @@ function createCardElement(card, playerKey, containerKey, options = {}) {
 
     cardEl.appendChild(img);
   }
-
+  if (Number(card.markers || 0) > 0) {
+    const markerBadge = document.createElement("div");
+    markerBadge.className = "marker-badge";
+    markerBadge.textContent = card.markers;
+    cardEl.appendChild(markerBadge);
+  }
   return cardEl;
 }
 
@@ -1548,45 +1554,78 @@ function renderContextMenu() {
     if (containerKey === "discardPile") {
       menu.appendChild(menuButton("Visualizar", () => openPileViewer(playerKey, containerKey)));
     } else if (isMine) {
-      menu.appendChild(menuButton("Puxar", () => drawFromPile(playerKey, containerKey)));
-      menu.appendChild(menuButton("Visualizar", () => openPileViewer(playerKey, containerKey)));
-      menu.appendChild(menuButton("Embaralhar", () => shufflePile(playerKey, containerKey)));
+ menu.appendChild(menuButton("Puxar", () => drawFromPile(playerKey, containerKey)));
+
+menu.appendChild(menuButton("Enviar topo ao descarte", () => {
+  const pileType =
+    containerKey === "deckPile" ? "mainDeck" : "trapDeck";
+
+  socket.emit("sendTopToDiscard", {
+    roomId,
+    pileType
+  });
+}));
+
+menu.appendChild(menuButton("Visualizar", () => openPileViewer(playerKey, containerKey)));
+
+menu.appendChild(menuButton("Embaralhar", () => shufflePile(playerKey, containerKey)));
     }
   }
 
   if (state.openMenu.type === "card") {
     const { cardId, playerKey, containerKey, x, y } = state.openMenu;
 
-    menu.appendChild(
-      menuButton("Virar / Revelar", () => toggleFaceDown(cardId, playerKey, containerKey))
-    );
-    menu.appendChild(
-      menuButton("Girar", () => toggleRotation(cardId, playerKey, containerKey))
-    );
-    menu.appendChild(
-      menuButton("Adicionar à mão", () => moveCard(cardId, playerKey, containerKey, myRole, "hand"))
-    );
-    menu.appendChild(
-      menuButton("Voltar ao deck", () => returnCardToOwnerDeck(cardId, playerKey, containerKey))
-    );
-    menu.appendChild(
-      menuButton("Enviar ao descarte", () =>
-        moveCard(cardId, playerKey, containerKey, myRole, "discardPile")
-      )
-    );
-    menu.appendChild(
-      menuButton("Colocar em zona...", () =>
-        openZoneChoiceMenu(x + 210, y, cardId, playerKey, containerKey)
-      )
-    );
+    // 1. efeito
+if (canUseEffect(cardId, playerKey, containerKey)) {
+  menu.appendChild(menuButton("Efeito", () => triggerCardEffect(cardId)));
+}
 
-    if (canUseEffect(cardId, playerKey, containerKey)) {
-      menu.appendChild(menuButton("Efeito", () => triggerCardEffect(cardId)));
-    }
+// 2. atacar
+if (!PILE_CONTAINERS.includes(containerKey) && containerKey !== "hand") {
+  menu.appendChild(menuButton("Atacar", () => startAttack(cardId, playerKey, containerKey)));
+}
 
-    if (!PILE_CONTAINERS.includes(containerKey) && containerKey !== "hand") {
-      menu.appendChild(menuButton("Atacar", () => startAttack(cardId, playerKey, containerKey)));
-    }
+// 3. virar / girar
+menu.appendChild(
+  menuButton("Virar / Revelar", () => toggleFaceDown(cardId, playerKey, containerKey))
+);
+
+menu.appendChild(
+  menuButton("Girar", () => toggleRotation(cardId, playerKey, containerKey))
+);
+if (!PILE_CONTAINERS.includes(containerKey) && containerKey !== "hand") {
+  menu.appendChild(
+    menuButton("Adicionar marcador", () => changeCardMarkers(cardId, playerKey, containerKey, 1))
+  );
+
+  menu.appendChild(
+    menuButton("Remover marcador", () => changeCardMarkers(cardId, playerKey, containerKey, -1))
+  );
+}
+// resto
+menu.appendChild(
+  menuButton("Adicionar à mão", () =>
+    moveCard(cardId, playerKey, containerKey, myRole, "hand")
+  )
+);
+
+menu.appendChild(
+  menuButton("Voltar ao deck", () =>
+    returnCardToOwnerDeck(cardId, playerKey, containerKey)
+  )
+);
+
+menu.appendChild(
+  menuButton("Enviar ao descarte", () =>
+    moveCard(cardId, playerKey, containerKey, myRole, "discardPile")
+  )
+);
+
+menu.appendChild(
+  menuButton("Colocar em zona...", () =>
+    openZoneChoiceMenu(x + 210, y, cardId, playerKey, containerKey)
+  )
+);
   }
 
   if (state.openMenu.type === "zoneChoice") {
@@ -1762,8 +1801,16 @@ function refreshOpenPrivatePileIfNeeded() {
   });
 }
 
-function shufflePile() {
-  alert("Embaralhar pilhas manualmente ainda não está sincronizado.");
+function shufflePile(playerKey, containerKey) {
+  if (playerKey !== myRole) return;
+
+  const pileType =
+    containerKey === "deckPile" ? "mainDeck" : "trapDeck";
+
+  socket.emit("shuffleDeck", {
+    roomId,
+    pileType
+  });
 }
 
 function shuffleHand(playerKey) {
@@ -1787,7 +1834,22 @@ function animateShuffle(element) {
     element.classList.remove("shuffling");
   }, 450);
 }
+function animatePileShuffle(playerKey, zoneKey) {
+  const uiZone = serverZoneToUiZone(zoneKey);
+  const pileZone = document.getElementById(`zone-${playerKey}-${uiZone}`);
+  if (!pileZone) return;
 
+  const pileEl = pileZone.querySelector(".pile");
+  if (!pileEl) return;
+
+  pileEl.classList.remove("shuffling");
+  void pileEl.offsetWidth;
+  pileEl.classList.add("shuffling");
+
+  setTimeout(() => {
+    pileEl.classList.remove("shuffling");
+  }, 450);
+}
 function findCardInContainer(playerKey, containerKey, cardId) {
   if (playerKey === myRole && isDeckLikeZone(containerKey)) {
     const privatePile = state.privatePiles[playerKey]?.[containerKey];
@@ -1931,6 +1993,20 @@ function toggleRotation(cardId, playerKey, containerKey) {
   });
 }
 
+function changeCardMarkers(cardId, playerKey, containerKey, delta) {
+  if (playerKey !== myRole) {
+    alert("Você não pode alterar marcadores do lado do oponente.");
+    return;
+  }
+
+  socket.emit("changeCardMarkers", {
+    roomId,
+    playerKey,
+    zoneKey: uiZoneToServerZone(containerKey),
+    cardId,
+    delta
+  });
+}
 function canUseEffect(cardId, playerKey, containerKey) {
   const allowedZones = [
     "mythic",
@@ -2245,6 +2321,11 @@ socket.on("effectAnimation", ({ cardId }) => {
 socket.on("attackAnimation", (payload) => {
   animateAttackFromPayload(payload);
 });
+
+socket.on("pileShuffled", ({ playerKey, pileType }) => {
+  animatePileShuffle(playerKey, pileType);
+});
+
 /* DOM EVENTS */
 
 document.addEventListener("click", (event) => {

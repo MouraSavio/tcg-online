@@ -216,7 +216,8 @@ function makeServerCard(name, type, deckKey, ownerRole) {
     deckKey,
     ownerRole,
     faceDown: false,
-    rotated: false
+    rotated: false,
+    markers: 0
   };
 }
 
@@ -228,7 +229,8 @@ function serializeCards(cards) {
     deckKey: card.deckKey,
     ownerRole: card.ownerRole,
     faceDown: !!card.faceDown,
-    rotated: !!card.rotated
+    rotated: !!card.rotated,
+    markers: Number(card.markers || 0)
   }));
 }
 function serializeCard(card) {
@@ -241,7 +243,8 @@ function serializeCard(card) {
     deckKey: card.deckKey,
     ownerRole: card.ownerRole,
     faceDown: !!card.faceDown,
-    rotated: !!card.rotated
+    rotated: !!card.rotated,
+    markers: Number(card.markers || 0)
   };
 }
 function buildMythicCard(deckKey, ownerRole) {
@@ -683,7 +686,13 @@ emitPrivatePileView(socket, player.role, playerState, "mainDeck");
       return;
     }
 
-    toArray.push(card);
+    // regra: toda carta que vai para descarte fica face up e desvirada
+if (toZone === "discardPile") {
+  card.faceDown = false;
+  card.rotated = false;
+}
+
+toArray.push(card);
 
 io.to(roomId).emit("visualAction", {
   kind: "move",
@@ -726,6 +735,32 @@ emitRoomState(roomId, room);
     card.faceDown = !!faceDown;
     emitRoomState(roomId, room);
   });
+  socket.on("shuffleDeck", ({ roomId, pileType }) => {
+  const result = getRoomAndPlayer(roomId, socket.id);
+  if (!result) return;
+
+  const { room, player } = result;
+  if (!room.matchState) return;
+
+  const playerState = room.matchState.players[player.role];
+  if (!playerState) return;
+
+  if (pileType !== "mainDeck" && pileType !== "trapDeck") return;
+
+  playerState[pileType] = shuffle(playerState[pileType]);
+
+  console.log(`Sala ${roomId}: ${player.role} embaralhou ${pileType}`);
+
+  emitRoomState(roomId, room);
+  emitPrivatePileView(socket, player.role, playerState, pileType);
+
+  setTimeout(() => {
+    io.to(roomId).emit("pileShuffled", {
+      playerKey: player.role,
+      pileType
+    });
+  }, 40);
+});
 
   socket.on("setCardRotation", ({ roomId, playerKey, zoneKey, cardId, rotated }) => {
     const result = getRoomAndPlayer(roomId, socket.id);
@@ -744,6 +779,42 @@ emitRoomState(roomId, room);
     card.rotated = !!rotated;
     emitRoomState(roomId, room);
   });
+  socket.on("changeCardMarkers", ({ roomId, playerKey, zoneKey, cardId, delta }) => {
+  const result = getRoomAndPlayer(roomId, socket.id);
+  if (!result) return;
+
+  const { room, player } = result;
+  if (!room.matchState) return;
+  if (playerKey !== player.role) return;
+
+  const zone = getZoneArray(room.matchState.players[playerKey], zoneKey);
+  if (!zone) return;
+
+  const card = zone.find((c) => c.id === cardId);
+  if (!card) return;
+
+  const allowedZones = [
+    "mythic",
+    "creature1",
+    "creature2",
+    "creature3",
+    "field",
+    "magic1",
+    "magic2",
+    "magic3",
+    "magic4"
+  ];
+
+  if (!allowedZones.includes(zoneKey)) return;
+
+  const amount = Number(delta);
+  if (!Number.isFinite(amount)) return;
+
+  const current = Number(card.markers || 0);
+  card.markers = Math.max(0, Math.min(10, current + amount));
+
+  emitRoomState(roomId, room);
+});
   socket.on("triggerEffectVisual", ({ roomId, playerKey, zoneKey, cardId }) => {
     const result = getRoomAndPlayer(roomId, socket.id);
     if (!result) return;
@@ -804,6 +875,45 @@ emitRoomState(roomId, room);
       cardId
     });
   });
+  socket.on("sendTopToDiscard", ({ roomId, pileType }) => {
+  const result = getRoomAndPlayer(roomId, socket.id);
+  if (!result) return;
+
+  const { room, player } = result;
+  if (!room.matchState) return;
+
+  const playerState = room.matchState.players[player.role];
+  if (!playerState) return;
+
+  if (pileType !== "mainDeck" && pileType !== "trapDeck") return;
+
+  const pile = playerState[pileType];
+
+  if (!pile.length) {
+    socket.emit("actionError", { message: "Pilha vazia." });
+    return;
+  }
+
+  const card = pile.pop();
+
+  // sempre face up no descarte
+  card.faceDown = false;
+  card.rotated = false;
+
+  playerState.discardPile.push(card);
+
+  io.to(roomId).emit("visualAction", {
+    kind: "move",
+    card: serializeCard(card),
+    fromPlayer: player.role,
+    fromZone: pileType,
+    toPlayer: player.role,
+    toZone: "discardPile"
+  });
+
+  emitRoomState(roomId, room);
+  emitPrivatePileView(socket, player.role, playerState, pileType);
+});
 
   socket.on("advancePhase", ({ roomId, targetPhase }) => {
     const result = getRoomAndPlayer(roomId, socket.id);
