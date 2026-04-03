@@ -9,11 +9,23 @@
 
 <!-- HOME -->
 <div id="homeScreen" class="screen active">
-  <h1>TCG Teste</h1>
-  <button onclick="goToDeck()">Iniciar</button>
-  <button onclick="openRules()">Regras</button>
-  <button onclick="openProfile()">Perfil</button>
-  <button onclick="sendTestAction()">Teste Online</button>
+  <div class="home-overlay"></div>
+
+  <div class="home-menu-panel">
+    <div class="home-menu-inner">
+      <h1 class="home-title">TCG Teste</h1>
+      <p class="home-subtitle">Escolha seu deck e entre na arena.</p>
+
+      <div class="home-buttons">
+        <button class="home-btn home-btn-primary" onclick="goToDeck()">Iniciar</button>
+
+        <div class="home-secondary-buttons">
+          <button class="home-btn home-btn-secondary" onclick="openRules()">Regras</button>
+          <button class="home-btn home-btn-secondary" onclick="openProfile()">Perfil</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ESCOLHA DE DECK -->

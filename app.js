@@ -334,7 +334,20 @@ function shuffle(array) {
 function makePath(deckKey, folder, cardName) {
   return `decks/deck-${deckKey}/${folder}/${cardName}.png`;
 }
+function getDeckBoxImage(deckKey) {
+  const deckBoxMap = {
+    fogo: "deckbox-fogo.png",
+    agua: "deckbox-agua.png",
+    ferragon: "deckbox-terra.png",
+    "cassino-goblin": "deckbox-terra.png"
+  };
 
+  const fileName = deckBoxMap[deckKey];
+
+  if (!fileName) return "";
+
+  return `decks/deck-${deckKey}/deck-box/${fileName}`;
+}
 function getOpponentRole(role) {
   return role === "p1" ? "p2" : "p1";
 }
@@ -448,34 +461,53 @@ function renderDeckButtons() {
   if (!container) return;
 
   container.innerHTML = "";
-  container.style.display = "grid";
-  container.style.gridTemplateColumns = "repeat(auto-fit, minmax(220px, 1fr))";
-  container.style.gap = "14px";
 
   Object.entries(DECKS).forEach(([deckKey, deckData]) => {
     const card = document.createElement("div");
-    card.style.background = "#1e1e1e";
-    card.style.border = "1px solid #444";
-    card.style.borderRadius = "12px";
-    card.style.padding = "12px";
-    card.style.boxShadow = "0 4px 12px rgba(0,0,0,0.4)";
+    card.className = "deck-select-card";
+
+    const imageWrap = document.createElement("div");
+    imageWrap.className = "deck-select-image-wrap";
+
+    const img = document.createElement("img");
+    img.className = "deck-select-image";
+    img.src = getDeckBoxImage(deckKey);
+    img.alt = deckData.displayName;
+    img.draggable = false;
+
+    img.onerror = () => {
+      imageWrap.innerHTML = "";
+      const fallback = document.createElement("div");
+      fallback.className = "deck-select-image-fallback";
+      fallback.textContent = deckData.displayName;
+      imageWrap.appendChild(fallback);
+    };
+
+    imageWrap.appendChild(img);
 
     const title = document.createElement("h3");
+    title.className = "deck-select-title";
     title.textContent = deckData.displayName;
-    title.style.marginBottom = "10px";
+
+    const actions = document.createElement("div");
+    actions.className = "deck-select-actions";
 
     const selectBtn = document.createElement("button");
+    selectBtn.className = "deck-action-btn deck-action-btn-primary";
     selectBtn.textContent = "Selecionar";
-    selectBtn.style.marginRight = "6px";
     selectBtn.onclick = () => selectDeck(deckKey);
 
     const viewBtn = document.createElement("button");
-    viewBtn.textContent = "Ver Lista";
+    viewBtn.className = "deck-action-btn deck-action-btn-secondary";
+    viewBtn.textContent = "Visualizar Cartas";
     viewBtn.onclick = () => openDeckPreview(deckKey);
 
+    actions.appendChild(selectBtn);
+    actions.appendChild(viewBtn);
+
+    card.appendChild(imageWrap);
     card.appendChild(title);
-    card.appendChild(selectBtn);
-    card.appendChild(viewBtn);
+    card.appendChild(actions);
 
     container.appendChild(card);
   });
