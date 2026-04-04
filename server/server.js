@@ -364,7 +364,16 @@ function getPublicMatchState(matchState) {
     }
   };
 }
+function getMatchStateForRole(matchState, role) {
+  const publicState = getPublicMatchState(matchState);
+  if (!publicState || !role || !publicState.players[role]) return publicState;
 
+  publicState.players[role].hand = serializeCards(
+    matchState.players[role].hand || []
+  );
+
+  return publicState;
+}
 function canAdvanceToPhase(currentPhase, targetPhase) {
   const currentIndex = PHASE_ORDER.indexOf(currentPhase);
   const targetIndex = PHASE_ORDER.indexOf(targetPhase);
@@ -432,23 +441,21 @@ function emitPrivatePileView(socket, playerRole, playerState, pileType) {
 }
 
 function emitRoomState(roomId, room) {
-  io.to(roomId).emit("matchStateUpdated", getPublicMatchState(room.matchState));
-
   const p1Socket = room.players.find((p) => p.role === "p1")?.socketId;
   const p2Socket = room.players.find((p) => p.role === "p2")?.socketId;
 
   if (p1Socket) {
-    io.to(p1Socket).emit("handUpdated", {
-      role: "p1",
-      hand: room.matchState.players.p1.hand
-    });
+    io.to(p1Socket).emit(
+      "matchStateUpdated",
+      getMatchStateForRole(room.matchState, "p1")
+    );
   }
 
   if (p2Socket) {
-    io.to(p2Socket).emit("handUpdated", {
-      role: "p2",
-      hand: room.matchState.players.p2.hand
-    });
+    io.to(p2Socket).emit(
+      "matchStateUpdated",
+      getMatchStateForRole(room.matchState, "p2")
+    );
   }
 }
 

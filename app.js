@@ -4,7 +4,10 @@ let myRole = null;
 let serverMatchState = null;
 let selectedDeck = null;
 let errorToastTimeout = null;
-
+let manualBoardZoom = 1;
+const MIN_BOARD_ZOOM = 0.6;
+const MAX_BOARD_ZOOM = 1.6;
+const ZOOM_STEP = 0.1;
 const remoteSelections = {
   p1: null,
   p2: null
@@ -418,7 +421,67 @@ function hydrateServerCard(card, ownerRole) {
 function hydrateServerCards(cards, ownerRole) {
   return (cards || []).map((card) => hydrateServerCard(card, ownerRole)).filter(Boolean);
 }
+function scheduleBoardAutoScale() {
+  applyBoardAutoScale();
+}
 
+function applyBoardAutoScale() {
+  const scaleShell = document.getElementById("boardScaleShell");
+  const boardLayout = document.querySelector(".board-main-layout");
+
+  if (!scaleShell || !boardLayout) return;
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  scaleShell.style.transform = "none";
+  scaleShell.style.width = "";
+  scaleShell.style.height = "";
+
+  const naturalWidth = boardLayout.scrollWidth;
+  const naturalHeight = boardLayout.scrollHeight;
+
+  let autoScale = 1;
+
+  if (viewportWidth < 1400) {
+    const widthScale = (viewportWidth - 24) / naturalWidth;
+    const heightScale = (viewportHeight - 24) / naturalHeight;
+    autoScale = Math.min(widthScale, heightScale, 1);
+  }
+
+  const finalScale = autoScale * manualBoardZoom;
+
+  scaleShell.style.transform = `scale(${finalScale})`;
+  scaleShell.style.transformOrigin = "top left";
+  scaleShell.style.width = `${naturalWidth * finalScale}px`;
+  scaleShell.style.height = `${naturalHeight * finalScale}px`;
+
+  updateZoomLabel();
+}
+
+function zoomInBoard() {
+  manualBoardZoom = Math.min(MAX_BOARD_ZOOM, +(manualBoardZoom + ZOOM_STEP).toFixed(2));
+  localStorage.setItem("zoom", manualBoardZoom);
+  applyBoardAutoScale();
+}
+
+function zoomOutBoard() {
+  manualBoardZoom = Math.max(MIN_BOARD_ZOOM, +(manualBoardZoom - ZOOM_STEP).toFixed(2));
+  localStorage.setItem("zoom", manualBoardZoom);
+  applyBoardAutoScale();
+}
+
+function resetBoardZoom() {
+  manualBoardZoom = 1;
+  localStorage.setItem("zoom", manualBoardZoom);
+  applyBoardAutoScale();
+}
+
+function updateZoomLabel() {
+  const label = document.getElementById("boardZoomLabel");
+  if (!label) return;
+  label.textContent = `${Math.round(manualBoardZoom * 100)}%`;
+}
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach((screen) => {
     screen.classList.remove("active");
@@ -428,6 +491,7 @@ function showScreen(id) {
   if (target) target.classList.add("active");
 
   closeContextMenu();
+  scheduleBoardAutoScale();
 }
 
 function goToDeck() {
@@ -758,6 +822,13 @@ function applyServerStateToUI() {
   state.players.p2.magic4 = hydrateServerCards(serverMatchState.players.p2.magic4, "p2");
   state.players.p2.discardPile = hydrateServerCards(serverMatchState.players.p2.discardPile, "p2");
 
+  if (myRole && serverMatchState.players[myRole]?.hand) {
+  state.players[myRole].hand = hydrateServerCards(
+    serverMatchState.players[myRole].hand,
+    myRole
+  );
+}
+
   syncOpponentHandVisual();
   refreshOpenPrivatePileIfNeeded();
   renderBoard();
@@ -840,8 +911,76 @@ function updatePerspectiveLabels() {
   if (bottomButton) {
     bottomButton.onclick = () => shuffleHand(bottomRole);
   }
-}
 
+  updateHudPerspective();
+}
+function updateHudPerspective() {
+  const topRole = getTopVisualRole();
+  const bottomRole = getBottomVisualRole();
+
+  const topIsP1 = topRole === "p1";
+  const bottomIsP1 = bottomRole === "p1";
+
+  // títulos
+  const topHpTitle = document.querySelector(".player-hud-top .hud-block:first-child .hud-title");
+  const topPaTitle = document.querySelector(".player-hud-top .hud-block:last-child .hud-title");
+  const bottomHpTitle = document.querySelector(".player-hud-bottom .hud-block:first-child .hud-title");
+  const bottomPaTitle = document.querySelector(".player-hud-bottom .hud-block:last-child .hud-title");
+
+  if (topHpTitle) topHpTitle.textContent = `HP Fera Mítica ${topRole.toUpperCase()}`;
+  if (topPaTitle) topPaTitle.textContent = `PA Jogador ${topRole === "p1" ? "1" : "2"}`;
+  if (bottomHpTitle) bottomHpTitle.textContent = `HP Fera Mítica ${bottomRole.toUpperCase()}`;
+  if (bottomPaTitle) bottomPaTitle.textContent = `PA Jogador ${bottomRole === "p1" ? "1" : "2"}`;
+
+  // valores de HP
+  const topHpEl = document.getElementById("mythicHp2");
+  const bottomHpEl = document.getElementById("mythicHp1");
+
+  if (topHpEl) topHpEl.textContent = topIsP1 ? currentMythicHP1 : currentMythicHP2;
+  if (bottomHpEl) bottomHpEl.textContent = bottomIsP1 ? currentMythicHP1 : currentMythicHP2;
+
+  // valores de PA
+  const topPaEl = document.getElementById("paValue2");
+  const bottomPaEl = document.getElementById("paValue1");
+
+  if (topPaEl) topPaEl.textContent = topIsP1 ? currentPA1 : currentPA2;
+  if (bottomPaEl) bottomPaEl.textContent = bottomIsP1 ? currentPA1 : currentPA2;
+
+  // inputs de ganho padrão
+  const topGainInput = document.getElementById("turnGain2");
+  const bottomGainInput = document.getElementById("turnGain1");
+
+  if (topGainInput) topGainInput.dataset.targetRole = topRole;
+  if (bottomGainInput) bottomGainInput.dataset.targetRole = bottomRole;
+
+  // remapear botões do painel de cima
+  const topHud = document.querySelector(".player-hud-top");
+  if (topHud) {
+    const hpButtons = topHud.querySelectorAll(".hp-controls button");
+    const paButtons = topHud.querySelectorAll(".pa-controls button");
+
+    if (hpButtons[0]) hpButtons[0].onclick = () => changeMythicHP(topRole === "p1" ? 1 : 2, "subtract", "hpChange2");
+    if (hpButtons[1]) hpButtons[1].onclick = () => changeMythicHP(topRole === "p1" ? 1 : 2, "add", "hpChange2");
+
+    if (paButtons[0]) paButtons[0].onclick = () => changePA(topRole === "p1" ? 1 : 2, -1);
+    if (paButtons[1]) paButtons[1].onclick = () => changePA(topRole === "p1" ? 1 : 2, 1);
+    if (paButtons[2]) paButtons[2].onclick = () => applyTurnGain(topRole === "p1" ? 1 : 2, "turnGain2");
+  }
+
+  // remapear botões do painel de baixo
+  const bottomHud = document.querySelector(".player-hud-bottom");
+  if (bottomHud) {
+    const hpButtons = bottomHud.querySelectorAll(".hp-controls button");
+    const paButtons = bottomHud.querySelectorAll(".pa-controls button");
+
+    if (hpButtons[0]) hpButtons[0].onclick = () => changeMythicHP(bottomRole === "p1" ? 1 : 2, "subtract", "hpChange1");
+    if (hpButtons[1]) hpButtons[1].onclick = () => changeMythicHP(bottomRole === "p1" ? 1 : 2, "add", "hpChange1");
+
+    if (paButtons[0]) paButtons[0].onclick = () => changePA(bottomRole === "p1" ? 1 : 2, -1);
+    if (paButtons[1]) paButtons[1].onclick = () => changePA(bottomRole === "p1" ? 1 : 2, 1);
+    if (paButtons[2]) paButtons[2].onclick = () => applyTurnGain(bottomRole === "p1" ? 1 : 2, "turnGain1");
+  }
+}
 function openRules() {
   const modal = document.getElementById("rulesModal");
   if (modal) modal.style.display = "block";
@@ -898,15 +1037,18 @@ function closeCardPreviewOnOverlay(event) {
 }
 
 function updateMythicHPDisplay() {
-  const el1 = document.getElementById("mythicHp1");
-  const el2 = document.getElementById("mythicHp2");
-
-  if (el1) el1.textContent = currentMythicHP1;
-  if (el2) el2.textContent = currentMythicHP2;
+  updateHudPerspective();
 }
 
-function changeMythicHP(player, operation) {
-  const input = document.getElementById(player === 1 ? "hpChange1" : "hpChange2");
+function changeMythicHP(targetPlayer, operation, inputId = null) {
+  let input = null;
+
+  if (inputId) {
+    input = document.getElementById(inputId);
+  } else {
+    input = document.getElementById(targetPlayer === 1 ? "hpChange1" : "hpChange2");
+  }
+
   if (!input) return;
 
   let value = parseInt(input.value, 10);
@@ -914,18 +1056,14 @@ function changeMythicHP(player, operation) {
 
   socket.emit("changeMythicHP", {
     roomId,
-    targetPlayer: player === 1 ? "p1" : "p2",
+    targetPlayer: targetPlayer === 1 ? "p1" : "p2",
     operation,
     amount: value
   });
 }
 
 function updatePADisplay() {
-  const el1 = document.getElementById("paValue1");
-  const el2 = document.getElementById("paValue2");
-
-  if (el1) el1.textContent = currentPA1;
-  if (el2) el2.textContent = currentPA2;
+  updateHudPerspective();
 }
 
 function changePA(player, amount) {
@@ -936,8 +1074,11 @@ function changePA(player, amount) {
   });
 }
 
-function applyTurnGain(player) {
-  const gainInput = document.getElementById(player === 1 ? "turnGain1" : "turnGain2");
+function applyTurnGain(player, inputId = null) {
+  const gainInput = inputId
+    ? document.getElementById(inputId)
+    : document.getElementById(player === 1 ? "turnGain1" : "turnGain2");
+
   if (!gainInput) return;
 
   let gain = parseInt(gainInput.value, 10);
@@ -1188,6 +1329,7 @@ function renderBoard() {
   renderBattleStatus();
   renderSidePreview();
   renderPileViewerIfOpen();
+  scheduleBoardAutoScale();
 }
 
 function renderPhaseButtons() {
@@ -1815,6 +1957,7 @@ function renderPileViewerIfOpen() {
   });
 
   panel.classList.remove("hidden");
+  scheduleBoardAutoScale();
 }
 
 function closePileViewer() {
@@ -2169,6 +2312,19 @@ function clearAttackArrow() {
 }
 
 function setupDropTarget(element, playerKey, containerKey) {
+  if (!element) return;
+
+  const isPersistentHand = containerKey === "hand";
+
+  if (isPersistentHand && element.dataset.dropBound === "true") {
+    element.dataset.player = playerKey;
+    element.dataset.container = containerKey;
+    return;
+  }
+
+  element.dataset.player = playerKey;
+  element.dataset.container = containerKey;
+
   element.addEventListener("dragover", (event) => {
     event.preventDefault();
     element.classList.add("drop-hover");
@@ -2184,16 +2340,28 @@ function setupDropTarget(element, playerKey, containerKey) {
 
     try {
       const data = JSON.parse(event.dataTransfer.getData("text/plain"));
+      const targetPlayer = element.dataset.player;
+      const targetContainer = element.dataset.container;
 
       if (data.playerKey !== myRole) {
         return;
       }
 
-      moveCard(data.cardId, data.playerKey, data.containerKey, playerKey, containerKey);
+      moveCard(
+        data.cardId,
+        data.playerKey,
+        data.containerKey,
+        targetPlayer,
+        targetContainer
+      );
     } catch (error) {
       console.error(error);
     }
   });
+
+  if (isPersistentHand) {
+    element.dataset.dropBound = "true";
+  }
 }
 
 function showErrorToast(message) {
@@ -2318,20 +2486,8 @@ socket.on("coinFlipped", ({ value }) => {
   }, 180);
 });
 
-socket.on("handUpdated", (data) => {
-  console.log("Sua mão atualizada:", data.hand);
-
-  if (!myRole) return;
-  if (data.role !== myRole) return;
-
-  const localPlayer = state.players[myRole];
-  if (!localPlayer) return;
-
-  localPlayer.hand = (data.hand || [])
-    .map((card) => hydrateServerCard(card, myRole))
-    .filter(Boolean);
-
-  renderBoard();
+socket.on("handUpdated", () => {
+  // fluxo desativado: a mão agora vem dentro de matchStateUpdated
 });
 
 socket.on("actionError", (data) => {
@@ -2368,25 +2524,36 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  const savedZoom = localStorage.getItem("zoom");
+  if (savedZoom) manualBoardZoom = parseFloat(savedZoom);
   renderDeckButtons();
   updatePerspectiveLabels();
+  scheduleBoardAutoScale();
 
   const hpInput1 = document.getElementById("hpChange1");
   const hpInput2 = document.getElementById("hpChange2");
 
   if (hpInput1) {
-    hpInput1.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        changeMythicHP(1, "subtract");
-      }
-    });
-  }
+  hpInput1.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      const bottomRole = getBottomVisualRole();
+      changeMythicHP(bottomRole === "p1" ? 1 : 2, "subtract", "hpChange1");
+    }
+  });
+}
 
-  if (hpInput2) {
-    hpInput2.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        changeMythicHP(2, "subtract");
-      }
-    });
-  }
+if (hpInput2) {
+  hpInput2.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      const topRole = getTopVisualRole();
+      changeMythicHP(topRole === "p1" ? 1 : 2, "subtract", "hpChange2");
+    }
+  });
+}
 });
+
+window.addEventListener("resize", scheduleBoardAutoScale);
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", scheduleBoardAutoScale);
+}

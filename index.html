@@ -44,137 +44,157 @@
 <div id="boardScreen" class="screen">
 
   <svg id="attackLayer"></svg>
+<div class="board-zoom-controls">
+  <button type="button" onclick="zoomOutBoard()">−</button>
+  <button type="button" id="boardZoomLabel" onclick="resetBoardZoom()">100%</button>
+  <button type="button" onclick="zoomInBoard()">+</button>
+</div>
+ <div id="boardScaleShell" class="board-scale-shell">
+  <div class="board-main-layout">
+    <!-- LATERAL ESQUERDA -->
+    <div class="left-panels">
+      <div class="preview-side-panel">
+        <div class="panel-title">Carta Selecionada</div>
+        <div id="sidePreviewCard" class="side-preview-card" onclick="openFullPreviewFromSelection()"></div>
+      </div>
 
-  <div class="board-wrapper">
-
-    <!-- MÃO OPONENTE -->
-    <div class="side">
-      <div class="hand-wrap">
-        <div class="hand-header">
-          <span>Mão do Oponente</span>
-          <button onclick="shuffleHand('p2')">Embaralhar</button>
+      <div id="pileViewerPanel" class="pile-viewer-panel hidden">
+        <div class="pile-viewer-header">
+          <span id="pileViewerTitle"></span>
+          <button onclick="closePileViewer()">Fechar</button>
         </div>
-        <div id="p2-hand" class="hand"></div>
+        <div id="pileViewerCards" class="pile-viewer-grid"></div>
       </div>
     </div>
 
-    <!-- CAMPO OPONENTE -->
-    <div id="p2-field" class="field rotated-field"></div>
+    <!-- CENTRO DO TABULEIRO -->
+    <div class="board-stage">
 
-    <!-- CONTROLES -->
-    <div class="center-controls">
-      <div id="phaseButtons" class="phases"></div>
-      <div id="battleStatus" class="battle-status"></div>
-    </div>
-
-    <!-- CAMPO JOGADOR -->
-    <div id="p1-field" class="field"></div>
-
-    <!-- MÃO JOGADOR -->
-    <div class="side">
-      <div class="hand-wrap">
-        <div class="hand-header">
-          <span>Sua Mão</span>
-          <button onclick="shuffleHand('p1')">Embaralhar</button>
+      <!-- MÃO OPONENTE -->
+      <div class="side">
+        <div class="hand-wrap">
+          <div class="hand-header">
+            <span>Mão do Oponente</span>
+            <button onclick="shuffleHand('p2')">Embaralhar</button>
+          </div>
+          <div id="p2-hand" class="hand"></div>
         </div>
-        <div id="p1-hand" class="hand"></div>
+      </div>
+
+      <!-- LINHA SUPERIOR -->
+      <div class="field-row field-row-top">
+        <div class="player-hud player-hud-top">
+          <div class="hud-block">
+            <div class="hud-title">HP Fera Mítica P2</div>
+            <div id="mythicHp2" class="hp-display">500</div>
+
+            <div class="hp-input-row">
+              <input id="hpChange2" type="number" value="0" placeholder="Valor">
+            </div>
+
+            <div class="hp-controls">
+              <button onclick="changeMythicHP(2, 'subtract')">-</button>
+              <button onclick="changeMythicHP(2, 'add')">+</button>
+            </div>
+          </div>
+
+          <div class="hud-block">
+            <div class="hud-title">PA Jogador 2</div>
+            <div id="paValue2" class="pa-display">0</div>
+
+            <div class="pa-controls">
+              <button onclick="changePA(2,-1)">-1</button>
+              <button onclick="changePA(2,1)">+1</button>
+              <button onclick="applyTurnGain(2)">Ganhar</button>
+            </div>
+
+            <div class="pa-gain">
+              <span>Ganho:</span>
+              <input id="turnGain2" type="number" value="3">
+            </div>
+          </div>
+        </div>
+
+        <div id="p2-field" class="field rotated-field"></div>
+      </div>
+
+      <!-- CENTRO -->
+      <div class="center-controls">
+        <div id="phaseButtons" class="phases"></div>
+
+        <div class="turn-tools">
+          <button class="inline-tool-btn" onclick="rollDice()">🎲 Dado</button>
+          <div id="diceResult" class="result-box compact-result-box">Dado: -</div>
+
+          <button class="inline-tool-btn" onclick="flipCoin()">🪙 Moeda</button>
+          <div id="coinResult" class="result-box compact-result-box">Moeda: -</div>
+        </div>
+
+        <div id="battleStatus" class="battle-status"></div>
+      </div>
+
+      <!-- LINHA INFERIOR -->
+      <div class="field-row field-row-bottom">
+        <div id="p1-field" class="field"></div>
+
+        <div class="player-hud player-hud-bottom">
+          <div class="hud-block">
+            <div class="hud-title">HP Fera Mítica P1</div>
+            <div id="mythicHp1" class="hp-display">500</div>
+
+            <div class="hp-input-row">
+              <input id="hpChange1" type="number" value="0" placeholder="Valor">
+            </div>
+
+            <div class="hp-controls">
+              <button onclick="changeMythicHP(1, 'subtract')">-</button>
+              <button onclick="changeMythicHP(1, 'add')">+</button>
+            </div>
+          </div>
+
+          <div class="hud-block">
+            <div class="hud-title">PA Jogador 1</div>
+            <div id="paValue1" class="pa-display">0</div>
+
+            <div class="pa-controls">
+              <button onclick="changePA(1,-1)">-1</button>
+              <button onclick="changePA(1,1)">+1</button>
+              <button onclick="applyTurnGain(1)">Ganhar</button>
+            </div>
+
+            <div class="pa-gain">
+              <span>Ganho:</span>
+              <input id="turnGain1" type="number" value="3">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MÃO JOGADOR -->
+      <div class="side">
+        <div class="hand-wrap">
+          <div class="hand-header">
+            <span>Sua Mão</span>
+            <button onclick="shuffleHand('p1')">Embaralhar</button>
+          </div>
+          <div id="p1-hand" class="hand"></div>
+        </div>
       </div>
     </div>
 
-  </div>
-
-  <!-- PAINEL ESQUERDO -->
-  <div class="left-panels">
-
-    <div class="preview-side-panel">
-      <div class="panel-title">Carta Selecionada</div>
-      <div id="sidePreviewCard" class="side-preview-card" onclick="openFullPreviewFromSelection()"></div>
-    </div>
-
-    <div id="pileViewerPanel" class="pile-viewer-panel hidden">
-      <div class="pile-viewer-header">
-        <span id="pileViewerTitle"></span>
-        <button onclick="closePileViewer()">Fechar</button>
+    <!-- LATERAL DIREITA -->
+    <div class="chat-sidebar-placeholder">
+      <div class="chat-placeholder-card">
+        <div class="panel-title">Chat da Partida</div>
+        <div class="chat-placeholder-body">
+          Espaço reservado para o chat em tempo real.
+        </div>
       </div>
-      <div id="pileViewerCards" class="pile-viewer-grid"></div>
     </div>
-
-  </div>
-
-  <!-- PAINEL DIREITO -->
-  <div class="side-panel">
-    <div class="hp-panel">
-  <h3>HP Fera Mítica P1</h3>
-  <div id="mythicHp1" class="hp-display">500</div>
-
-  <div class="hp-input-row">
-    <input id="hpChange1" type="number" value="0" placeholder="Valor">
-  </div>
-
-  <div class="hp-controls">
-    <button onclick="changeMythicHP(1, 'subtract')">-</button>
-    <button onclick="changeMythicHP(1, 'add')">+</button>
   </div>
 </div>
 
-<div class="hp-panel">
-  <h3>HP Fera Mítica P2</h3>
-  <div id="mythicHp2" class="hp-display">500</div>
-
-  <div class="hp-input-row">
-    <input id="hpChange2" type="number" value="0" placeholder="Valor">
-  </div>
-
-  <div class="hp-controls">
-    <button onclick="changeMythicHP(2, 'subtract')">-</button>
-    <button onclick="changeMythicHP(2, 'add')">+</button>
-  </div>
-</div>
-
-    <div class="pa-panel">
-      <h3>PA Jogador 1</h3>
-      <div id="paValue1" class="pa-display">0</div>
-
-      <div class="pa-controls">
-        <button onclick="changePA(1,-1)">-1</button>
-        <button onclick="changePA(1,1)">+1</button>
-        <button onclick="applyTurnGain(1)">Ganhar</button>
-      </div>
-
-      <div class="pa-gain">
-        <span>Ganho:</span>
-        <input id="turnGain1" type="number" value="3">
-      </div>
-    </div>
-
-    <div class="pa-panel">
-      <h3>PA Jogador 2</h3>
-      <div id="paValue2" class="pa-display">0</div>
-
-      <div class="pa-controls">
-        <button onclick="changePA(2,-1)">-1</button>
-        <button onclick="changePA(2,1)">+1</button>
-        <button onclick="applyTurnGain(2)">Ganhar</button>
-      </div>
-
-      <div class="pa-gain">
-        <span>Ganho:</span>
-        <input id="turnGain2" type="number" value="3">
-      </div>
-    </div>
-
-    <div class="tool-panel">
-      <button onclick="rollDice()">🎲 Dado</button>
-      <div id="diceResult" class="result-box">Dado: -</div>
-
-      <button onclick="flipCoin()">🪙 Moeda</button>
-      <div id="coinResult" class="result-box">Moeda: -</div>
-    </div>
-
-  </div>
-
-  <button class="back-button" onclick="goHome()">Voltar</button>
-
+  <button class="back-button back-button-board" onclick="goHome()">Voltar</button>
 </div>
 
 <!-- MODAL REGRAS -->
