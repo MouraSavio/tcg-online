@@ -4,6 +4,7 @@ let myRole = null;
 let serverMatchState = null;
 let selectedDeck = null;
 let errorToastTimeout = null;
+let chatMessagesState = [];
 let manualBoardZoom = 1;
 const MIN_BOARD_ZOOM = 0.6;
 const MAX_BOARD_ZOOM = 1.6;
@@ -17,6 +18,29 @@ let currentPA1 = 0;
 let currentPA2 = 0;
 let currentMythicHP1 = 500;
 let currentMythicHP2 = 500;
+
+const DEFAULT_PROFILE_AVATAR = "assets/avatars/defaults/avatar-default.png";
+
+const SELECTABLE_AVATARS = [
+  "assets/avatars/selectable/avatar-01.png",
+  "assets/avatars/selectable/avatar-02.png",
+  "assets/avatars/selectable/avatar-03.png",
+  "assets/avatars/selectable/avatar-04.png",
+  "assets/avatars/selectable/avatar-05.png",
+  "assets/avatars/selectable/avatar-06.png",
+  "assets/avatars/selectable/avatar-07.png"
+];
+let selectedProfileAvatar = DEFAULT_PROFILE_AVATAR;
+const syncedProfiles = {
+  p1: {
+    name: "Jogador 1",
+    avatar: DEFAULT_PROFILE_AVATAR
+  },
+  p2: {
+    name: "Jogador 2",
+    avatar: DEFAULT_PROFILE_AVATAR
+  }
+};
 
 const roomId = window.location.search.replace("?room=", "") || "default";
 
@@ -912,7 +936,8 @@ function updatePerspectiveLabels() {
     bottomButton.onclick = () => shuffleHand(bottomRole);
   }
 
-  updateHudPerspective();
+    updateHudPerspective();
+  updateChatPerspectiveProfile();
 }
 function updateHudPerspective() {
   const topRole = getTopVisualRole();
@@ -999,9 +1024,7 @@ function openProfile() {
   const modal = document.getElementById("profileModal");
   if (modal) modal.style.display = "block";
 
-  const savedName = localStorage.getItem("tcgProfileName") || "";
-  const input = document.getElementById("profileNameInput");
-  if (input) input.value = savedName;
+  loadProfileIntoModal();
 }
 
 function closeProfile() {
@@ -1012,14 +1035,252 @@ function closeProfile() {
 function closeProfileOnOverlay(event) {
   if (event.target.id === "profileModal") closeProfile();
 }
+function getSavedProfile() {
+  const raw = localStorage.getItem("tcgProfile");
+
+  if (!raw) {
+    return {
+      name: "",
+      avatar: DEFAULT_PROFILE_AVATAR
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    const avatar = parsed.avatar || DEFAULT_PROFILE_AVATAR;
+
+    return {
+      name: parsed.name || "",
+      avatar
+    };
+  } catch (error) {
+    return {
+      name: "",
+      avatar: DEFAULT_PROFILE_AVATAR
+    };
+  }
+}
+
+function renderProfileAvatarOptions() {
+  const grid = document.getElementById("profileAvatarGrid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  SELECTABLE_AVATARS.forEach((avatarPath) => {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "profile-avatar-option" + (selectedProfileAvatar === avatarPath ? " selected" : "");
+
+    const img = document.createElement("img");
+    img.src = avatarPath;
+    img.alt = "Avatar";
+
+    option.appendChild(img);
+
+    option.addEventListener("click", () => {
+      selectedProfileAvatar = avatarPath;
+      updateProfileAvatarPreview();
+      renderProfileAvatarOptions();
+    });
+
+    grid.appendChild(option);
+  });
+}
+
+function updateProfileAvatarPreview() {
+  const preview = document.getElementById("profileAvatarPreview");
+  if (!preview) return;
+  preview.src = selectedProfileAvatar || DEFAULT_PROFILE_AVATAR;
+}
+
+function loadProfileIntoModal() {
+  const savedProfile = getSavedProfile();
+
+  const input = document.getElementById("profileNameInput");
+  if (input) input.value = savedProfile.name || "";
+
+  const savedAvatar = savedProfile.avatar || "";
+
+  if (
+    savedAvatar &&
+    (savedAvatar === DEFAULT_PROFILE_AVATAR || SELECTABLE_AVATARS.includes(savedAvatar))
+  ) {
+    selectedProfileAvatar = savedAvatar;
+  } else {
+    selectedProfileAvatar = DEFAULT_PROFILE_AVATAR;
+  }
+
+  updateProfileAvatarPreview();
+  renderProfileAvatarOptions();
+}
 
 function saveProfile() {
   const input = document.getElementById("profileNameInput");
   if (!input) return;
 
-  const value = input.value.trim();
-  localStorage.setItem("tcgProfileName", value);
+  const profile = {
+    name: input.value.trim(),
+    avatar: selectedProfileAvatar || DEFAULT_PROFILE_AVATAR
+  };
+
+  localStorage.setItem("tcgProfile", JSON.stringify(profile));
+  updateProfileAvatarPreview();
+  emitMyProfile();
+  updateChatPerspectiveProfile();
   closeProfile();
+}
+
+function emitMyProfile() {
+  const profile = getSavedProfile();
+
+  socket.emit("setProfile", {
+    roomId,
+    name: profile.name || "",
+    avatar: profile.avatar || DEFAULT_PROFILE_AVATAR
+  });
+}
+
+function getDisplayProfileName(profileName, fallback) {
+  const clean = (profileName || "").trim();
+  return clean || fallback;
+}
+
+function updateChatPerspectiveProfile() {
+  const opponentRole = getTopVisualRole();
+  const myCurrentRole = getBottomVisualRole();
+
+  const opponentProfile = syncedProfiles[opponentRole] || {};
+  const myProfile = syncedProfiles[myCurrentRole] || {};
+
+  const opponentNameEl = document.getElementById("chatOpponentName");
+  const opponentAvatarEl = document.getElementById("chatOpponentAvatar");
+  const myNameEl = document.getElementById("chatMyName");
+  const myAvatarEl = document.getElementById("chatMyAvatar");
+
+  if (opponentNameEl) {
+    opponentNameEl.textContent = getDisplayProfileName(
+      opponentProfile.name,
+      opponentRole === "p1" ? "Jogador 1" : "Jogador 2"
+    );
+  }
+
+  if (opponentAvatarEl) {
+    opponentAvatarEl.src = opponentProfile.avatar || DEFAULT_PROFILE_AVATAR;
+  }
+
+  if (myNameEl) {
+    myNameEl.textContent = getDisplayProfileName(
+      myProfile.name,
+      myCurrentRole === "p1" ? "Jogador 1" : "Jogador 2"
+    );
+  }
+
+  if (myAvatarEl) {
+    myAvatarEl.src = myProfile.avatar || DEFAULT_PROFILE_AVATAR;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function getChatDisplayNameByRole(role) {
+  const profile = syncedProfiles[role] || {};
+  return getDisplayProfileName(
+    profile.name,
+    role === "p1" ? "Jogador 1" : "Jogador 2"
+  );
+}
+
+function getChatAvatarByRole(role) {
+  const profile = syncedProfiles[role] || {};
+  return profile.avatar || DEFAULT_PROFILE_AVATAR;
+}
+
+function renderChatMessages() {
+  const chatBox = document.getElementById("chatMessages");
+  if (!chatBox) return;
+
+  if (!chatMessagesState.length) {
+    chatBox.innerHTML = '<div class="chat-empty-message">Chat da partida</div>';
+    return;
+  }
+
+  chatBox.innerHTML = chatMessagesState
+    .map((message) => {
+      const isMine = message.senderRole === myRole;
+      const bubbleClass = isMine ? "chat-message mine" : "chat-message other";
+      const senderName = escapeHtml(getChatDisplayNameByRole(message.senderRole));
+      const avatar = escapeHtml(getChatAvatarByRole(message.senderRole));
+      const text = escapeHtml(message.text);
+
+      return `
+        <div class="${bubbleClass}">
+          <img class="chat-message-avatar" src="${avatar}" alt="${senderName}">
+          <div class="chat-message-content">
+            <div class="chat-message-sender">${senderName}</div>
+            <div class="chat-message-text">${text}</div>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function appendChatMessage(message) {
+  if (!message || !message.senderRole || !message.text) return;
+  chatMessagesState.push(message);
+
+  if (chatMessagesState.length > 100) {
+    chatMessagesState = chatMessagesState.slice(-100);
+  }
+
+  renderChatMessages();
+}
+
+function sendChatMessage() {
+  const input = document.getElementById("chatInput");
+  if (!input) return;
+
+  const text = input.value.trim();
+
+  if (!text) return;
+
+  socket.emit("sendChatMessage", {
+    roomId,
+    text
+  });
+
+  input.value = "";
+}
+
+function bindChatEvents() {
+  const input = document.getElementById("chatInput");
+  const button = document.getElementById("chatSendButton");
+
+  if (button && !button.dataset.chatBound) {
+    button.addEventListener("click", sendChatMessage);
+    button.dataset.chatBound = "true";
+  }
+
+  if (input && !input.dataset.chatBound) {
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        sendChatMessage();
+      }
+    });
+
+    input.dataset.chatBound = "true";
+  }
 }
 
 function closeCardPreview() {
@@ -1381,7 +1642,7 @@ function renderFieldInElement(fieldElementId, playerKey) {
 
   FIELD_LAYOUT.flat().forEach((containerKey) => {
     const zoneEl = document.createElement("div");
-    zoneEl.className = "zone";
+    zoneEl.className = containerKey === "mythic" ? "zone mythic-zone" : "zone";
     zoneEl.id = `zone-${playerKey}-${containerKey}`;
     zoneEl.dataset.player = playerKey;
     zoneEl.dataset.container = containerKey;
@@ -2415,6 +2676,9 @@ socket.on("playerRole", (role) => {
   myRole = role;
   console.log("Seu papel:", role);
   updatePerspectiveLabels();
+  emitMyProfile();
+
+  socket.emit("requestChatHistory", { roomId });
 });
 
 socket.on("readyStatus", (ready) => {
@@ -2437,8 +2701,34 @@ socket.on("deckSelectionsUpdated", (deckSelections) => {
   console.log("Decks escolhidos:", deckSelections);
 });
 
+socket.on("playersProfileUpdated", (profiles) => {
+  if (!profiles) return;
+
+  syncedProfiles.p1 = {
+    name: profiles.p1?.name || "Jogador 1",
+    avatar: profiles.p1?.avatar || DEFAULT_PROFILE_AVATAR
+  };
+
+  syncedProfiles.p2 = {
+    name: profiles.p2?.name || "Jogador 2",
+    avatar: profiles.p2?.avatar || DEFAULT_PROFILE_AVATAR
+  };
+
+  updateChatPerspectiveProfile();
+  renderChatMessages();
+});
+
 socket.on("testActionReceived", (data) => {
   console.log("Ação recebida do outro jogador:", data.message);
+});
+
+socket.on("chatHistory", (messages) => {
+  chatMessagesState = Array.isArray(messages) ? messages.slice(-100) : [];
+  renderChatMessages();
+});
+
+socket.on("chatMessage", (message) => {
+  appendChatMessage(message);
 });
 
 socket.on("matchStateUpdated", (matchState) => {
@@ -2529,6 +2819,9 @@ document.addEventListener("DOMContentLoaded", () => {
   renderDeckButtons();
   updatePerspectiveLabels();
   scheduleBoardAutoScale();
+  loadProfileIntoModal();
+  updateChatPerspectiveProfile();
+  bindChatEvents();
 
   const hpInput1 = document.getElementById("hpChange1");
   const hpInput2 = document.getElementById("hpChange2");

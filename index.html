@@ -69,8 +69,8 @@
 
     <!-- CENTRO DO TABULEIRO -->
     <div class="board-stage">
-
-      <!-- MÃO OPONENTE -->
+     
+          <!-- MÃO OPONENTE -->
       <div class="side">
         <div class="hand-wrap">
           <div class="hand-header">
@@ -181,16 +181,49 @@
         </div>
       </div>
     </div>
-
+    
     <!-- LATERAL DIREITA -->
-    <div class="chat-sidebar-placeholder">
-      <div class="chat-placeholder-card">
-        <div class="panel-title">Chat da Partida</div>
-        <div class="chat-placeholder-body">
-          Espaço reservado para o chat em tempo real.
-        </div>
+    <div class="chat-sidebar">
+  <div class="chat-shell">
+
+    <!-- PERFIL DO OPONENTE -->
+    <div class="chat-profile chat-profile-top">
+      <div class="chat-profile-avatar-wrap">
+        <img class="chat-profile-avatar-frame" src="assets/ui/profile/avatar-frame.png" alt="Moldura do avatar">
+        <img id="chatOpponentAvatar" class="chat-profile-avatar" src="assets/avatars/defaults/avatar-default.png" alt="Avatar do oponente">
+      </div>
+
+      <div class="chat-profile-name-wrap">
+        <img class="chat-profile-nameplate" src="assets/ui/profile/nameplate.png" alt="Placa do nome">
+        <div id="chatOpponentName" class="chat-profile-name">Oponente</div>
       </div>
     </div>
+
+    <!-- ÁREA DE MENSAGENS -->
+    <div id="chatMessages" class="chat-messages-area">
+      <div class="chat-empty-message">Chat da partida</div>
+    </div>
+
+    <!-- SEU PERFIL -->
+    <div class="chat-profile chat-profile-bottom">
+      <div class="chat-profile-avatar-wrap">
+        <img class="chat-profile-avatar-frame" src="assets/ui/profile/avatar-frame.png" alt="Moldura do avatar">
+        <img id="chatMyAvatar" class="chat-profile-avatar" src="assets/avatars/defaults/avatar-default.png" alt="Seu avatar">
+      </div>
+
+      <div class="chat-profile-name-wrap">
+        <img class="chat-profile-nameplate" src="assets/ui/profile/nameplate.png" alt="Placa do nome">
+        <div id="chatMyName" class="chat-profile-name">Você</div>
+      </div>
+    </div>
+
+    <!-- INPUT -->
+    <div class="chat-input-shell">
+      <img class="chat-input-shell-bg" src="assets/ui/chat/chat-input-bar.png" alt="Barra do chat">
+      <input id="chatInput" class="chat-input-field" type="text" maxlength="180" placeholder="Digite uma mensagem...">
+      <button id="chatSendButton" class="chat-send-button" type="button">Enviar</button>
+    </div>
+
   </div>
 </div>
 
@@ -429,11 +462,30 @@
 
 <!-- MODAL PERFIL -->
 <div id="profileModal" class="modal" onclick="closeProfileOnOverlay(event)">
-  <div class="modal-content">
+  <div class="modal-content profile-modal-content">
     <h2>Perfil</h2>
-    <input id="profileNameInput" placeholder="Seu nome">
-    <button onclick="saveProfile()">Salvar</button>
-    <button onclick="closeProfile()">Fechar</button>
+
+    <div class="profile-form">
+      <label for="profileNameInput">Nome do jogador</label>
+      <input id="profileNameInput" placeholder="Seu nome" maxlength="20">
+
+      <div class="profile-avatar-preview-wrap">
+        <div class="profile-avatar-preview-label">Avatar selecionado</div>
+        <div class="profile-avatar-preview">
+          <img id="profileAvatarPreview" src="assets/avatars/defaults/avatar-default.png" alt="Avatar selecionado">
+        </div>
+      </div>
+
+      <div class="profile-avatar-section">
+        <div class="profile-avatar-section-title">Escolha seu avatar</div>
+        <div id="profileAvatarGrid" class="profile-avatar-grid"></div>
+      </div>
+
+      <div class="profile-actions">
+        <button onclick="saveProfile()">Salvar</button>
+        <button onclick="closeProfile()">Fechar</button>
+      </div>
+    </div>
   </div>
 </div>
 

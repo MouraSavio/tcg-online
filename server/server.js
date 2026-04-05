@@ -459,18 +459,35 @@ function emitRoomState(roomId, room) {
   }
 }
 
+function emitRoomProfiles(roomId, room) {
+  const p1 = room.players.find((p) => p.role === "p1");
+  const p2 = room.players.find((p) => p.role === "p2");
+
+  io.to(roomId).emit("playersProfileUpdated", {
+    p1: {
+      name: p1?.name || "",
+      avatar: p1?.avatar || ""
+    },
+    p2: {
+      name: p2?.name || "",
+      avatar: p2?.avatar || ""
+    }
+  });
+}
+
 io.on("connection", (socket) => {
   console.log("Jogador conectado:", socket.id);
 
   socket.on("joinRoom", (roomId) => {
-    if (!rooms[roomId]) {
-      rooms[roomId] = {
-        players: [],
-        deckSelections: {},
-        ready: {},
-        matchState: null
-      };
-    }
+  if (!rooms[roomId]) {
+    rooms[roomId] = {
+    players: [],
+    deckSelections: {},
+    ready: {},
+    matchState: null,
+    chatMessages: []
+  };
+}
 
     const room = rooms[roomId];
 
@@ -485,7 +502,9 @@ io.on("connection", (socket) => {
 
       room.players.push({
         socketId: socket.id,
-        role
+        role,
+         name: "",
+         avatar: ""
       });
 
       socket.join(roomId);
@@ -495,6 +514,7 @@ io.on("connection", (socket) => {
     }
 
     io.to(roomId).emit("playersInRoom", room.players);
+    emitRoomProfiles(roomId, room);
   });
 
   socket.on("testAction", ({ roomId, message }) => {
@@ -517,6 +537,54 @@ io.on("connection", (socket) => {
 
     console.log(`Sala ${roomId}: ${player.role} escolheu o deck ${deck}`);
     io.to(roomId).emit("deckSelectionsUpdated", room.deckSelections);
+  });
+
+    socket.on("setProfile", ({ roomId, name, avatar }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const player = room.players.find((p) => p.socketId === socket.id);
+    if (!player) return;
+
+    player.name = typeof name === "string" ? name.trim().slice(0, 20) : "";
+    player.avatar = typeof avatar === "string" ? avatar.trim() : "";
+
+    emitRoomProfiles(roomId, room);
+  });
+
+    socket.on("requestChatHistory", ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    socket.emit("chatHistory", room.chatMessages || []);
+  });
+
+  socket.on("sendChatMessage", ({ roomId, text }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const player = room.players.find((p) => p.socketId === socket.id);
+    if (!player) return;
+
+    const cleanText =
+      typeof text === "string" ? text.trim().replace(/\s+/g, " ").slice(0, 180) : "";
+
+    if (!cleanText) return;
+
+    const message = {
+      id: serverUid(),
+      senderRole: player.role,
+      text: cleanText,
+      createdAt: Date.now()
+    };
+
+    room.chatMessages.push(message);
+
+    if (room.chatMessages.length > 100) {
+      room.chatMessages = room.chatMessages.slice(-100);
+    }
+
+    io.to(roomId).emit("chatMessage", message);
   });
 
   socket.on("playerReady", ({ roomId }) => {
@@ -1091,6 +1159,7 @@ emitRoomState(roomId, room);
       io.to(roomId).emit("playersInRoom", room.players);
       io.to(roomId).emit("deckSelectionsUpdated", room.deckSelections);
       io.to(roomId).emit("readyStatus", room.ready);
+      emitRoomProfiles(roomId, room);
 
       if (room.players.length === 0) {
         delete rooms[roomId];
