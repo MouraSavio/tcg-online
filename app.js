@@ -2850,3 +2850,27 @@ window.addEventListener("resize", scheduleBoardAutoScale);
 if (window.visualViewport) {
   window.visualViewport.addEventListener("resize", scheduleBoardAutoScale);
 }
+window.goToDeck = goToDeck;
+window.goHome = goHome;
+window.openRules = openRules;
+window.closeRules = closeRules;
+window.closeRulesOnOverlay = closeRulesOnOverlay;
+window.openProfile = openProfile;
+window.closeProfile = closeProfile;
+window.closeProfileOnOverlay = closeProfileOnOverlay;
+window.startGame = startGame;
+window.zoomInBoard = zoomInBoard;
+window.zoomOutBoard = zoomOutBoard;
+window.resetBoardZoom = resetBoardZoom;
+window.openFullPreviewFromSelection = openFullPreviewFromSelection;
+window.closePileViewer = closePileViewer;
+window.rollDice = rollDice;
+window.flipCoin = flipCoin;
+window.changeMythicHP = changeMythicHP;
+window.changePA = changePA;
+window.applyTurnGain = applyTurnGain;
+window.shuffleHand = shuffleHand;
+window.saveProfile = saveProfile;
+window.closeCardPreviewOnOverlay = closeCardPreviewOnOverlay;
+window.closeDeckPreview = closeDeckPreview;
+window.closeDeckPreviewOnOverlay = closeDeckPreviewOnOverlay;

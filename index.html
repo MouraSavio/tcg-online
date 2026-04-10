@@ -7,507 +7,516 @@
 </head>
 <body>
 
-<!-- HOME -->
-<div id="homeScreen" class="screen active">
-  <div class="home-overlay"></div>
+  <!-- HOME -->
+  <div id="homeScreen" class="screen active">
+    <div class="home-overlay"></div>
 
-  <div class="home-menu-panel">
-    <div class="home-menu-inner">
-      <h1 class="home-title">TCG Teste</h1>
-      <p class="home-subtitle">Escolha seu deck e entre na arena.</p>
+    <div class="home-menu-panel">
+      <div class="home-menu-inner">
+        <h1 class="home-title">TCG Teste</h1>
+        <p class="home-subtitle">Escolha seu deck e entre na arena.</p>
 
-      <div class="home-buttons">
-        <button class="home-btn home-btn-primary" onclick="goToDeck()">Iniciar</button>
+        <div class="home-buttons">
+          <button class="home-btn home-btn-primary" onclick="goToDeck()">Iniciar</button>
 
-        <div class="home-secondary-buttons">
-          <button class="home-btn home-btn-secondary" onclick="openRules()">Regras</button>
-          <button class="home-btn home-btn-secondary" onclick="openProfile()">Perfil</button>
+          <div class="home-secondary-buttons">
+            <button class="home-btn home-btn-secondary" onclick="openRules()">Regras</button>
+            <button class="home-btn home-btn-secondary" onclick="openProfile()">Perfil</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- ESCOLHA DE DECK -->
-<div id="deckScreen" class="screen">
-  <h2>Escolha seu Deck</h2>
+  <!-- ESCOLHA DE DECK -->
+  <div id="deckScreen" class="screen">
+    <h2>Escolha seu Deck</h2>
 
-  <div id="deckButtons" class="deck-buttons"></div>
+    <div id="deckButtons" class="deck-buttons"></div>
 
-  <div id="selectedDeckLabel" class="selected-deck-label"></div>
+    <div id="selectedDeckLabel" class="selected-deck-label"></div>
 
-  <button onclick="startGame()">Começar</button>
-  <button onclick="goHome()">Voltar</button>
-</div>
+    <button onclick="startGame()">Começar</button>
+    <button onclick="goHome()">Voltar</button>
+  </div>
 
-<!-- TABULEIRO -->
-<div id="boardScreen" class="screen">
+  <!-- TABULEIRO -->
+  <div id="boardScreen" class="screen">
+    <svg id="attackLayer"></svg>
 
-  <svg id="attackLayer"></svg>
-<div class="board-zoom-controls">
-  <button type="button" onclick="zoomOutBoard()">−</button>
-  <button type="button" id="boardZoomLabel" onclick="resetBoardZoom()">100%</button>
-  <button type="button" onclick="zoomInBoard()">+</button>
-</div>
- <div id="boardScaleShell" class="board-scale-shell">
-  <div class="board-main-layout">
-    <!-- LATERAL ESQUERDA -->
-    <div class="left-panels">
-      <div class="preview-side-panel">
-        <div class="panel-title">Carta Selecionada</div>
-        <div id="sidePreviewCard" class="side-preview-card" onclick="openFullPreviewFromSelection()"></div>
-      </div>
-
-      <div id="pileViewerPanel" class="pile-viewer-panel hidden">
-        <div class="pile-viewer-header">
-          <span id="pileViewerTitle"></span>
-          <button onclick="closePileViewer()">Fechar</button>
-        </div>
-        <div id="pileViewerCards" class="pile-viewer-grid"></div>
-      </div>
+    <div class="board-zoom-controls">
+      <button type="button" onclick="zoomOutBoard()">−</button>
+      <button type="button" id="boardZoomLabel" onclick="resetBoardZoom()">100%</button>
+      <button type="button" onclick="zoomInBoard()">+</button>
     </div>
 
-    <!-- CENTRO DO TABULEIRO -->
-    <div class="board-stage">
-     
+    <div id="boardScaleShell" class="board-scale-shell">
+      <div class="board-main-layout">
+
+        <!-- LATERAL ESQUERDA -->
+        <div class="left-panels">
+          <div class="preview-side-panel">
+            <div class="panel-title">Carta Selecionada</div>
+            <div id="sidePreviewCard" class="side-preview-card" onclick="openFullPreviewFromSelection()"></div>
+          </div>
+
+          <div id="pileViewerPanel" class="pile-viewer-panel hidden">
+            <div class="pile-viewer-header">
+              <span id="pileViewerTitle"></span>
+              <button onclick="closePileViewer()">Fechar</button>
+            </div>
+            <div id="pileViewerCards" class="pile-viewer-grid"></div>
+          </div>
+        </div>
+
+        <!-- CENTRO DO TABULEIRO -->
+        <div class="board-stage">
+
           <!-- MÃO OPONENTE -->
-      <div class="side">
-        <div class="hand-wrap">
-          <div class="hand-header">
-            <span>Mão do Oponente</span>
-            <button onclick="shuffleHand('p2')">Embaralhar</button>
+          <div class="side">
+            <div class="hand-wrap">
+              <div class="hand-header">
+                <span>Mão do Oponente</span>
+                <button onclick="shuffleHand('p2')">Embaralhar</button>
+              </div>
+              <div id="p2-hand" class="hand"></div>
+            </div>
           </div>
-          <div id="p2-hand" class="hand"></div>
+
+          <!-- LINHA SUPERIOR -->
+          <div class="field-row field-row-top">
+            <div class="player-hud player-hud-top">
+              <div class="hud-block">
+                <div class="hud-title">HP Fera Mítica P2</div>
+                <div id="mythicHp2" class="hp-display">500</div>
+
+                <div class="hp-input-row">
+                  <input id="hpChange2" type="number" value="0" placeholder="Valor">
+                </div>
+
+                <div class="hp-controls">
+                  <button onclick="changeMythicHP(2, 'subtract')">-</button>
+                  <button onclick="changeMythicHP(2, 'add')">+</button>
+                </div>
+              </div>
+
+              <div class="hud-block">
+                <div class="hud-title">PA Jogador 2</div>
+                <div id="paValue2" class="pa-display">0</div>
+
+                <div class="pa-controls">
+                  <button onclick="changePA(2,-1)">-1</button>
+                  <button onclick="changePA(2,1)">+1</button>
+                  <button onclick="applyTurnGain(2)">Ganhar</button>
+                </div>
+
+                <div class="pa-gain">
+                  <span>Ganho:</span>
+                  <input id="turnGain2" type="number" value="3">
+                </div>
+              </div>
+            </div>
+
+            <div id="p2-field" class="field rotated-field"></div>
+          </div>
+
+          <!-- CENTRO -->
+          <div class="center-controls">
+            <div id="phaseButtons" class="phases"></div>
+
+            <div class="turn-tools">
+              <button class="inline-tool-btn" onclick="rollDice()">🎲 Dado</button>
+              <div id="diceResult" class="result-box compact-result-box">Dado: -</div>
+
+              <button class="inline-tool-btn" onclick="flipCoin()">🪙 Moeda</button>
+              <div id="coinResult" class="result-box compact-result-box">Moeda: -</div>
+            </div>
+
+            <div id="battleStatus" class="battle-status"></div>
+          </div>
+
+          <!-- LINHA INFERIOR -->
+          <div class="field-row field-row-bottom">
+            <div id="p1-field" class="field"></div>
+
+            <div class="player-hud player-hud-bottom">
+              <div class="hud-block">
+                <div class="hud-title">HP Fera Mítica P1</div>
+                <div id="mythicHp1" class="hp-display">500</div>
+
+                <div class="hp-input-row">
+                  <input id="hpChange1" type="number" value="0" placeholder="Valor">
+                </div>
+
+                <div class="hp-controls">
+                  <button onclick="changeMythicHP(1, 'subtract')">-</button>
+                  <button onclick="changeMythicHP(1, 'add')">+</button>
+                </div>
+              </div>
+
+              <div class="hud-block">
+                <div class="hud-title">PA Jogador 1</div>
+                <div id="paValue1" class="pa-display">0</div>
+
+                <div class="pa-controls">
+                  <button onclick="changePA(1,-1)">-1</button>
+                  <button onclick="changePA(1,1)">+1</button>
+                  <button onclick="applyTurnGain(1)">Ganhar</button>
+                </div>
+
+                <div class="pa-gain">
+                  <span>Ganho:</span>
+                  <input id="turnGain1" type="number" value="3">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MÃO JOGADOR -->
+          <div class="side">
+            <div class="hand-wrap">
+              <div class="hand-header">
+                <span>Sua Mão</span>
+                <button onclick="shuffleHand('p1')">Embaralhar</button>
+              </div>
+              <div id="p1-hand" class="hand"></div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- LINHA SUPERIOR -->
-      <div class="field-row field-row-top">
-        <div class="player-hud player-hud-top">
-          <div class="hud-block">
-            <div class="hud-title">HP Fera Mítica P2</div>
-            <div id="mythicHp2" class="hp-display">500</div>
+        <!-- LATERAL DIREITA -->
+        <div class="chat-sidebar">
+          <div class="chat-shell">
 
-            <div class="hp-input-row">
-              <input id="hpChange2" type="number" value="0" placeholder="Valor">
+            <!-- PERFIL DO OPONENTE -->
+            <div class="chat-profile chat-profile-top">
+              <div class="chat-profile-avatar-wrap">
+                <img class="chat-profile-avatar-frame" src="assets/ui/profile/avatar-frame.png" alt="Moldura do avatar">
+                <img id="chatOpponentAvatar" class="chat-profile-avatar" src="assets/avatars/defaults/avatar-default.png" alt="Avatar do oponente">
+              </div>
+
+              <div class="chat-profile-name-wrap">
+                <img class="chat-profile-nameplate" src="assets/ui/profile/nameplate.png" alt="Placa do nome">
+                <div id="chatOpponentName" class="chat-profile-name">Oponente</div>
+              </div>
             </div>
 
-            <div class="hp-controls">
-              <button onclick="changeMythicHP(2, 'subtract')">-</button>
-              <button onclick="changeMythicHP(2, 'add')">+</button>
-            </div>
-          </div>
-
-          <div class="hud-block">
-            <div class="hud-title">PA Jogador 2</div>
-            <div id="paValue2" class="pa-display">0</div>
-
-            <div class="pa-controls">
-              <button onclick="changePA(2,-1)">-1</button>
-              <button onclick="changePA(2,1)">+1</button>
-              <button onclick="applyTurnGain(2)">Ganhar</button>
+            <!-- ÁREA DE MENSAGENS -->
+            <div id="chatMessages" class="chat-messages-area">
+              <div class="chat-empty-message">Chat da partida</div>
             </div>
 
-            <div class="pa-gain">
-              <span>Ganho:</span>
-              <input id="turnGain2" type="number" value="3">
-            </div>
-          </div>
-        </div>
+            <!-- SEU PERFIL -->
+            <div class="chat-profile chat-profile-bottom">
+              <div class="chat-profile-avatar-wrap">
+                <img class="chat-profile-avatar-frame" src="assets/ui/profile/avatar-frame.png" alt="Moldura do avatar">
+                <img id="chatMyAvatar" class="chat-profile-avatar" src="assets/avatars/defaults/avatar-default.png" alt="Seu avatar">
+              </div>
 
-        <div id="p2-field" class="field rotated-field"></div>
-      </div>
-
-      <!-- CENTRO -->
-      <div class="center-controls">
-        <div id="phaseButtons" class="phases"></div>
-
-        <div class="turn-tools">
-          <button class="inline-tool-btn" onclick="rollDice()">🎲 Dado</button>
-          <div id="diceResult" class="result-box compact-result-box">Dado: -</div>
-
-          <button class="inline-tool-btn" onclick="flipCoin()">🪙 Moeda</button>
-          <div id="coinResult" class="result-box compact-result-box">Moeda: -</div>
-        </div>
-
-        <div id="battleStatus" class="battle-status"></div>
-      </div>
-
-      <!-- LINHA INFERIOR -->
-      <div class="field-row field-row-bottom">
-        <div id="p1-field" class="field"></div>
-
-        <div class="player-hud player-hud-bottom">
-          <div class="hud-block">
-            <div class="hud-title">HP Fera Mítica P1</div>
-            <div id="mythicHp1" class="hp-display">500</div>
-
-            <div class="hp-input-row">
-              <input id="hpChange1" type="number" value="0" placeholder="Valor">
+              <div class="chat-profile-name-wrap">
+                <img class="chat-profile-nameplate" src="assets/ui/profile/nameplate.png" alt="Placa do nome">
+                <div id="chatMyName" class="chat-profile-name">Você</div>
+              </div>
             </div>
 
-            <div class="hp-controls">
-              <button onclick="changeMythicHP(1, 'subtract')">-</button>
-              <button onclick="changeMythicHP(1, 'add')">+</button>
-            </div>
-          </div>
-
-          <div class="hud-block">
-            <div class="hud-title">PA Jogador 1</div>
-            <div id="paValue1" class="pa-display">0</div>
-
-            <div class="pa-controls">
-              <button onclick="changePA(1,-1)">-1</button>
-              <button onclick="changePA(1,1)">+1</button>
-              <button onclick="applyTurnGain(1)">Ganhar</button>
+            <!-- INPUT -->
+            <div class="chat-input-shell">
+              <img class="chat-input-shell-bg" src="assets/ui/chat/chat-input-bar.png" alt="Barra do chat">
+              <input id="chatInput" class="chat-input-field" type="text" maxlength="180" placeholder="Digite uma mensagem...">
+              <button id="chatSendButton" class="chat-send-button" type="button">Enviar</button>
             </div>
 
-            <div class="pa-gain">
-              <span>Ganho:</span>
-              <input id="turnGain1" type="number" value="3">
-            </div>
           </div>
         </div>
-      </div>
 
-      <!-- MÃO JOGADOR -->
-      <div class="side">
-        <div class="hand-wrap">
-          <div class="hand-header">
-            <span>Sua Mão</span>
-            <button onclick="shuffleHand('p1')">Embaralhar</button>
-          </div>
-          <div id="p1-hand" class="hand"></div>
-        </div>
       </div>
     </div>
-    
-    <!-- LATERAL DIREITA -->
-    <div class="chat-sidebar">
-  <div class="chat-shell">
 
-    <!-- PERFIL DO OPONENTE -->
-    <div class="chat-profile chat-profile-top">
-      <div class="chat-profile-avatar-wrap">
-        <img class="chat-profile-avatar-frame" src="assets/ui/profile/avatar-frame.png" alt="Moldura do avatar">
-        <img id="chatOpponentAvatar" class="chat-profile-avatar" src="assets/avatars/defaults/avatar-default.png" alt="Avatar do oponente">
-      </div>
-
-      <div class="chat-profile-name-wrap">
-        <img class="chat-profile-nameplate" src="assets/ui/profile/nameplate.png" alt="Placa do nome">
-        <div id="chatOpponentName" class="chat-profile-name">Oponente</div>
-      </div>
-    </div>
-
-    <!-- ÁREA DE MENSAGENS -->
-    <div id="chatMessages" class="chat-messages-area">
-      <div class="chat-empty-message">Chat da partida</div>
-    </div>
-
-    <!-- SEU PERFIL -->
-    <div class="chat-profile chat-profile-bottom">
-      <div class="chat-profile-avatar-wrap">
-        <img class="chat-profile-avatar-frame" src="assets/ui/profile/avatar-frame.png" alt="Moldura do avatar">
-        <img id="chatMyAvatar" class="chat-profile-avatar" src="assets/avatars/defaults/avatar-default.png" alt="Seu avatar">
-      </div>
-
-      <div class="chat-profile-name-wrap">
-        <img class="chat-profile-nameplate" src="assets/ui/profile/nameplate.png" alt="Placa do nome">
-        <div id="chatMyName" class="chat-profile-name">Você</div>
-      </div>
-    </div>
-
-    <!-- INPUT -->
-    <div class="chat-input-shell">
-      <img class="chat-input-shell-bg" src="assets/ui/chat/chat-input-bar.png" alt="Barra do chat">
-      <input id="chatInput" class="chat-input-field" type="text" maxlength="180" placeholder="Digite uma mensagem...">
-      <button id="chatSendButton" class="chat-send-button" type="button">Enviar</button>
-    </div>
-
+    <button class="back-button back-button-board" onclick="goHome()">Voltar</button>
   </div>
-</div>
 
-  <button class="back-button back-button-board" onclick="goHome()">Voltar</button>
-</div>
+  <!-- MODAL REGRAS -->
+  <div id="rulesModal" class="modal" onclick="closeRulesOnOverlay(event)">
+    <div class="modal-content rules-content">
+      <h2>Regras do Jogo</h2>
 
-<!-- MODAL REGRAS -->
-<div id="rulesModal" class="modal" onclick="closeRulesOnOverlay(event)">
-  <div class="modal-content rules-content">
-    <h2>Regras do Jogo</h2>
+      <h3>1. Visão Geral</h3>
+      <p>
+        Este é um jogo de cartas estratégico para dois jogadores. Cada jogador controla uma Fera Mítica e um conjunto de criaturas, utilizando Pontos de Ação (PA) para invocar unidades, ativar magias e dominar o campo de batalha.
+      </p>
+      <p>
+        Uma partida dura, em média, entre 8 e 12 turnos.
+      </p>
 
-    <h3>1. Visão Geral</h3>
-    <p>
-      Este é um jogo de cartas estratégico para dois jogadores. Cada jogador controla uma Fera Mítica e um conjunto de criaturas, utilizando Pontos de Ação (PA) para invocar unidades, ativar magias e dominar o campo de batalha.
-    </p>
-    <p>
-      Uma partida dura, em média, entre 8 e 12 turnos.
-    </p>
+      <h3>2. Condições de Vitória</h3>
+      <ul>
+        <li><strong>Regicida:</strong> reduzir o HP da Fera Mítica do oponente a 0.</li>
+        <li><strong>Deckout:</strong> se o oponente precisar comprar uma carta do Deck Principal e não possuir cartas, ele perde a partida.</li>
+      </ul>
 
-    <h3>2. Condições de Vitória</h3>
-    <ul>
-      <li><strong>Regicida:</strong> reduzir o HP da Fera Mítica do oponente a 0.</li>
-      <li><strong>Deckout:</strong> se o oponente precisar comprar uma carta do Deck Principal e não possuir cartas, ele perde a partida.</li>
-    </ul>
+      <h3>3. Preparação do Jogo</h3>
+      <ul>
+        <li>Utilize um Deck Principal com exatamente 30 cartas.</li>
+        <li>O Deck Principal deve conter no mínimo 10 criaturas.</li>
+        <li>O Deck Principal deve conter pelo menos 3 criaturas de Nível 3.</li>
+        <li>Escolha 1 Fera Mítica fora do deck.</li>
+        <li>Inclua exatamente 1 Carta de Campo no Deck Principal.</li>
+        <li>Utilize um Deck de Armadilhas com exatamente 10 cartas.</li>
+        <li>O Deck de Armadilhas pode conter até 3 cópias da mesma carta.</li>
+      </ul>
 
-    <h3>3. Preparação do Jogo</h3>
-    <ul>
-      <li>Utilize um Deck Principal com exatamente 30 cartas.</li>
-      <li>O Deck Principal deve conter no mínimo 10 criaturas.</li>
-      <li>O Deck Principal deve conter pelo menos 3 criaturas de Nível 3.</li>
-      <li>Escolha 1 Fera Mítica fora do deck.</li>
-      <li>Inclua exatamente 1 Carta de Campo no Deck Principal.</li>
-      <li>Utilize um Deck de Armadilhas com exatamente 10 cartas.</li>
-      <li>O Deck de Armadilhas pode conter até 3 cópias da mesma carta.</li>
-    </ul>
+      <h3>4. Início da Partida</h3>
+      <ul>
+        <li>Embaralhe o Deck Principal e o Deck de Armadilhas.</li>
+        <li>Cada jogador compra 1 carta do Deck Principal.</li>
+        <li>Coloque a Fera Mítica na zona correspondente.</li>
+        <li>Defina quem começa.</li>
+        <li>Criaturas podem atacar no turno em que entram em campo.</li>
+      </ul>
 
-    <h3>4. Início da Partida</h3>
-    <ul>
-      <li>Embaralhe o Deck Principal e o Deck de Armadilhas.</li>
-      <li>Cada jogador compra 1 carta do Deck Principal.</li>
-      <li>Coloque a Fera Mítica na zona correspondente.</li>
-      <li>Defina quem começa.</li>
-      <li>Criaturas podem atacar no turno em que entram em campo.</li>
-    </ul>
+      <h3>5. Estrutura do Campo</h3>
+      <ul>
+        <li>1 Zona da Fera Mítica</li>
+        <li>3 Zonas de Criaturas</li>
+        <li>4 Zonas de Magias/Armadilhas</li>
+        <li>1 Zona de Campo</li>
+        <li>1 Deck Principal</li>
+        <li>1 Zona de Deck de Armadilhas</li>
+        <li>1 Pilha de Descarte</li>
+      </ul>
 
-    <h3>5. Estrutura do Campo</h3>
-    <ul>
-      <li>1 Zona da Fera Mítica</li>
-      <li>3 Zonas de Criaturas</li>
-      <li>4 Zonas de Magias/Armadilhas</li>
-      <li>1 Zona de Campo</li>
-      <li>1 Deck Principal</li>
-      <li>1 Zona de Deck de Armadilhas</li>
-      <li>1 Pilha de Descarte</li>
-    </ul>
+      <h3>6. Pontos de Ação (PA)</h3>
+      <ul>
+        <li>PA é o recurso principal do jogo.</li>
+        <li>É usado para invocar criaturas, ativar magias e pagar custos de efeitos.</li>
+        <li>Cada jogador recebe +3 PA no início de cada turno.</li>
+        <li>O máximo acumulado é 12 PA.</li>
+      </ul>
 
-    <h3>6. Pontos de Ação (PA)</h3>
-    <ul>
-      <li>PA é o recurso principal do jogo.</li>
-      <li>É usado para invocar criaturas, ativar magias e pagar custos de efeitos.</li>
-      <li>Cada jogador recebe +3 PA no início de cada turno.</li>
-      <li>O máximo acumulado é 12 PA.</li>
-    </ul>
+      <h3>7. Criaturas</h3>
+      <p>Cada criatura possui:</p>
+      <ul>
+        <li>Nível (1 a 3)</li>
+        <li>ATK</li>
+        <li>DEF</li>
+        <li>HP</li>
+        <li>Ataque do turno</li>
+        <li>Efeitos, quando houver</li>
+      </ul>
 
-    <h3>7. Criaturas</h3>
-    <p>Cada criatura possui:</p>
-    <ul>
-      <li>Nível (1 a 3)</li>
-      <li>ATK</li>
-      <li>DEF</li>
-      <li>HP</li>
-      <li>Ataque do turno</li>
-      <li>Efeitos, quando houver</li>
-    </ul>
+      <h3>8. Posição de Batalha</h3>
+      <p><strong>Modo de Ataque (horizontal):</strong></p>
+      <ul>
+        <li>Pode atacar.</li>
+        <li>Recebe dano diretamente no HP.</li>
+      </ul>
+      <p><strong>Modo de Defesa (vertical):</strong></p>
+      <ul>
+        <li>Não pode atacar.</li>
+        <li>A DEF reduz o dano recebido.</li>
+      </ul>
+      <p>Cada criatura pode mudar de posição uma vez por turno.</p>
 
-    <h3>8. Posição de Batalha</h3>
-    <p><strong>Modo de Ataque (horizontal):</strong></p>
-    <ul>
-      <li>Pode atacar.</li>
-      <li>Recebe dano diretamente no HP.</li>
-    </ul>
-    <p><strong>Modo de Defesa (vertical):</strong></p>
-    <ul>
-      <li>Não pode atacar.</li>
-      <li>A DEF reduz o dano recebido.</li>
-    </ul>
-    <p>Cada criatura pode mudar de posição uma vez por turno.</p>
+      <h3>9. Sistema de Combate</h3>
+      <ul>
+        <li>Na Fase de Batalha, o jogador declara um ataque e escolhe um alvo válido.</li>
+        <li>Contra criaturas em modo de ataque, o ATK do atacante é aplicado diretamente ao HP da criatura alvo.</li>
+        <li>Contra criaturas em modo de defesa, se o ATK do atacante for maior que a DEF do alvo, o dano causado é igual à diferença entre esses valores.</li>
+        <li>Se o ATK não superar a DEF, nenhum dano é causado.</li>
+        <li>Quando o HP de uma criatura chega a 0, ela é destruída e enviada à Pilha de Descarte.</li>
+      </ul>
 
-    <h3>9. Sistema de Combate</h3>
-    <ul>
-      <li>Na Fase de Batalha, o jogador declara um ataque e escolhe um alvo válido.</li>
-      <li>Contra criaturas em modo de ataque, o ATK do atacante é aplicado diretamente ao HP da criatura alvo.</li>
-      <li>Contra criaturas em modo de defesa, se o ATK do atacante for maior que a DEF do alvo, o dano causado é igual à diferença entre esses valores.</li>
-      <li>Se o ATK não superar a DEF, nenhum dano é causado.</li>
-      <li>Quando o HP de uma criatura chega a 0, ela é destruída e enviada à Pilha de Descarte.</li>
-    </ul>
+      <h3>10. Deck de Armadilhas</h3>
+      <ul>
+        <li>É um deck separado com exatamente 10 cartas.</li>
+        <li>Não pode ser comprado normalmente.</li>
+        <li>Não faz parte do Deck Principal.</li>
+        <li>Pode conter até 3 cópias da mesma carta.</li>
+        <li>Se uma armadilha retornar ao deck por efeito, ela retorna ao Deck de Armadilhas.</li>
+        <li>Armadilhas só podem ser obtidas uma vez por turno, quando você destruir uma criatura inimiga em batalha, ou por efeitos de cartas.</li>
+        <li>As armadilhas obtidas são adicionadas à mão.</li>
+      </ul>
 
-    <h3>10. Deck de Armadilhas</h3>
-    <ul>
-      <li>É um deck separado com exatamente 10 cartas.</li>
-      <li>Não pode ser comprado normalmente.</li>
-      <li>Não faz parte do Deck Principal.</li>
-      <li>Pode conter até 3 cópias da mesma carta.</li>
-      <li>Se uma armadilha retornar ao deck por efeito, ela retorna ao Deck de Armadilhas.</li>
-      <li>Armadilhas só podem ser obtidas uma vez por turno, quando você destruir uma criatura inimiga em batalha, ou por efeitos de cartas.</li>
-      <li>As armadilhas obtidas são adicionadas à mão.</li>
-    </ul>
+      <h3>11. Fera Mítica</h3>
+      <ul>
+        <li>Possui 500 HP.</li>
+        <li>Possui 100 DEF.</li>
+        <li>É tratada como criatura especial e possui zona própria.</li>
+        <li>Não é afetada por efeitos de cartas, exceto quando o efeito mencionar especificamente a Fera Mítica.</li>
+        <li>Não pode ser atacada enquanto seu controlador possuir outras criaturas em campo.</li>
+        <li>Enquanto seu controlador possuir outras criaturas em campo, não pode ser alvo de condições negativas.</li>
+      </ul>
+      <p><strong>Quando estiver desprotegida:</strong></p>
+      <ul>
+        <li>Pode ser atacada.</li>
+        <li>O ATK do atacante deve ser maior que a DEF da Fera Mítica para causar dano.</li>
+        <li>O dano causado é igual à diferença entre o ATK do atacante e a DEF da Fera Mítica.</li>
+      </ul>
+      <p><strong>Dano passivo:</strong></p>
+      <ul>
+        <li>Se uma criatura de Nível 1 sua for destruída por batalha ou efeito do oponente, sua Fera Mítica sofre 25 de dano.</li>
+        <li>Se for Nível 2, sofre 50 de dano.</li>
+        <li>Se for Nível 3, sofre 100 de dano.</li>
+      </ul>
+      <p><strong>Habilidades:</strong></p>
+      <ul>
+        <li>No seu primeiro turno, você pode pagar 1 PA para adicionar 1 criatura de Nível 1 do seu Deck à sua mão.</li>
+        <li>A Fera Mítica pode atacar gratuitamente se houver uma Carta de Campo ativa.</li>
+        <li>Sem Campo ativo, atacar com a Fera Mítica custa 3 PA.</li>
+        <li>Você pode pagar 3 PA para ativar diretamente a Carta de Campo do seu Deck.</li>
+      </ul>
+      <p>A Fera Mítica pode ser afetada por condições negativas e é imune às condições do seu próprio elemento.</p>
 
-    <h3>11. Fera Mítica</h3>
-    <ul>
-      <li>Possui 500 HP.</li>
-      <li>Possui 100 DEF.</li>
-      <li>É tratada como criatura especial e possui zona própria.</li>
-      <li>Não é afetada por efeitos de cartas, exceto quando o efeito mencionar especificamente a Fera Mítica.</li>
-      <li>Não pode ser atacada enquanto seu controlador possuir outras criaturas em campo.</li>
-      <li>Enquanto seu controlador possuir outras criaturas em campo, não pode ser alvo de condições negativas.</li>
-    </ul>
-    <p><strong>Quando estiver desprotegida:</strong></p>
-    <ul>
-      <li>Pode ser atacada.</li>
-      <li>O ATK do atacante deve ser maior que a DEF da Fera Mítica para causar dano.</li>
-      <li>O dano causado é igual à diferença entre o ATK do atacante e a DEF da Fera Mítica.</li>
-    </ul>
-    <p><strong>Dano passivo:</strong></p>
-    <ul>
-      <li>Se uma criatura de Nível 1 sua for destruída por batalha ou efeito do oponente, sua Fera Mítica sofre 25 de dano.</li>
-      <li>Se for Nível 2, sofre 50 de dano.</li>
-      <li>Se for Nível 3, sofre 100 de dano.</li>
-    </ul>
-    <p><strong>Habilidades:</strong></p>
-    <ul>
-      <li>No seu primeiro turno, você pode pagar 1 PA para adicionar 1 criatura de Nível 1 do seu Deck à sua mão.</li>
-      <li>A Fera Mítica pode atacar gratuitamente se houver uma Carta de Campo ativa.</li>
-      <li>Sem Campo ativo, atacar com a Fera Mítica custa 3 PA.</li>
-      <li>Você pode pagar 3 PA para ativar diretamente a Carta de Campo do seu Deck.</li>
-    </ul>
-    <p>A Fera Mítica pode ser afetada por condições negativas e é imune às condições do seu próprio elemento.</p>
+      <h3>12. Magias</h3>
+      <ul>
+        <li>Existem Magias Normais e Magias Contínuas.</li>
+        <li>Possuem efeitos imediatos, como destruição, compra de cartas, manipulação de PA e recuperação de recursos.</li>
+        <li>Para ativar uma Magia, é necessário possuir uma Zona de Magia/Armadilha livre.</li>
+        <li>A carta é colocada com a face para cima nessa zona e seu efeito é resolvido imediatamente.</li>
+        <li>Se não for Contínua, é enviada à Pilha de Descarte após a resolução.</li>
+        <li>Se for Contínua, permanece em campo até ser removida.</li>
+        <li>Magias só podem ser ativadas no turno do jogador, salvo indicação em contrário.</li>
+      </ul>
 
-    <h3>12. Magias</h3>
-    <ul>
-      <li>Existem Magias Normais e Magias Contínuas.</li>
-      <li>Possuem efeitos imediatos, como destruição, compra de cartas, manipulação de PA e recuperação de recursos.</li>
-      <li>Para ativar uma Magia, é necessário possuir uma Zona de Magia/Armadilha livre.</li>
-      <li>A carta é colocada com a face para cima nessa zona e seu efeito é resolvido imediatamente.</li>
-      <li>Se não for Contínua, é enviada à Pilha de Descarte após a resolução.</li>
-      <li>Se for Contínua, permanece em campo até ser removida.</li>
-      <li>Magias só podem ser ativadas no turno do jogador, salvo indicação em contrário.</li>
-    </ul>
+      <h3>13. Armadilhas</h3>
+      <ul>
+        <li>Existem Armadilhas Normais e Armadilhas Contínuas.</li>
+        <li>São cartas reativas colocadas viradas para baixo.</li>
+        <li>Devem ser colocadas da mão em uma Zona de Magia/Armadilha viradas para baixo.</li>
+        <li>Só podem ser ativadas no turno do oponente, salvo indicação em contrário.</li>
+        <li>Devem permanecer no campo por 1 turno completo antes de poderem ser ativadas.</li>
+        <li>Se não forem Contínuas, vão para a Pilha de Descarte após a ativação.</li>
+        <li>Se forem Contínuas, permanecem em campo até serem removidas.</li>
+      </ul>
 
-    <h3>13. Armadilhas</h3>
-    <ul>
-      <li>Existem Armadilhas Normais e Armadilhas Contínuas.</li>
-      <li>São cartas reativas colocadas viradas para baixo.</li>
-      <li>Devem ser colocadas da mão em uma Zona de Magia/Armadilha viradas para baixo.</li>
-      <li>Só podem ser ativadas no turno do oponente, salvo indicação em contrário.</li>
-      <li>Devem permanecer no campo por 1 turno completo antes de poderem ser ativadas.</li>
-      <li>Se não forem Contínuas, vão para a Pilha de Descarte após a ativação.</li>
-      <li>Se forem Contínuas, permanecem em campo até serem removidas.</li>
-    </ul>
+      <h3>14. Carta de Campo</h3>
+      <ul>
+        <li>Cada jogador possui exatamente 1 Carta de Campo no Deck Principal.</li>
+        <li>Ela permanece ativa na Zona de Campo.</li>
+        <li>Cada jogador pode controlar apenas 1 Campo.</li>
+      </ul>
+      <p><strong>Geração de PA:</strong></p>
+      <ul>
+        <li>No turno de ativação: +1 PA</li>
+        <li>No turno seguinte: +2 PA</li>
+        <li>A partir do terceiro turno: +3 PA</li>
+      </ul>
+      <p>Esse bônus é somado ao ganho base de PA.</p>
+      <ul>
+        <li>A Fera Mítica pode atacar gratuitamente enquanto houver Campo ativo.</li>
+        <li>Sem Campo ativo, atacar com a Fera Mítica custa 3 PA.</li>
+      </ul>
 
-    <h3>14. Carta de Campo</h3>
-    <ul>
-      <li>Cada jogador possui exatamente 1 Carta de Campo no Deck Principal.</li>
-      <li>Ela permanece ativa na Zona de Campo.</li>
-      <li>Cada jogador pode controlar apenas 1 Campo.</li>
-    </ul>
-    <p><strong>Geração de PA:</strong></p>
-    <ul>
-      <li>No turno de ativação: +1 PA</li>
-      <li>No turno seguinte: +2 PA</li>
-      <li>A partir do terceiro turno: +3 PA</li>
-    </ul>
-    <p>Esse bônus é somado ao ganho base de PA.</p>
-    <ul>
-      <li>A Fera Mítica pode atacar gratuitamente enquanto houver Campo ativo.</li>
-      <li>Sem Campo ativo, atacar com a Fera Mítica custa 3 PA.</li>
-    </ul>
+      <h3>15. Sistema de Invocação</h3>
+      <ul>
+        <li>Criatura de Nível 1 custa 1 PA.</li>
+        <li>Criatura de Nível 2 custa 2 PA.</li>
+        <li>Criatura de Nível 3 custa 3 PA.</li>
+      </ul>
 
-    <h3>15. Sistema de Invocação</h3>
-    <ul>
-      <li>Criatura de Nível 1 custa 1 PA.</li>
-      <li>Criatura de Nível 2 custa 2 PA.</li>
-      <li>Criatura de Nível 3 custa 3 PA.</li>
-    </ul>
+      <h3>16. Sacrifício</h3>
+      <ul>
+        <li>Você pode sacrificar criaturas para reduzir o custo de invocação.</li>
+        <li>A criatura sacrificada deve estar em campo há pelo menos 1 turno.</li>
+        <li>O valor do sacrifício é igual ao nível da criatura.</li>
+      </ul>
 
-    <h3>16. Sacrifício</h3>
-    <ul>
-      <li>Você pode sacrificar criaturas para reduzir o custo de invocação.</li>
-      <li>A criatura sacrificada deve estar em campo há pelo menos 1 turno.</li>
-      <li>O valor do sacrifício é igual ao nível da criatura.</li>
-    </ul>
+      <h3>17. Estrutura do Turno</h3>
+      <ol>
+        <li>Início — ganha +3 PA</li>
+        <li>Compra — compra 1 carta</li>
+        <li>Fase Principal 1</li>
+        <li>Fase de Batalha</li>
+        <li>Fase Principal 2</li>
+        <li>Fase Final</li>
+      </ol>
+      <p>Limite de 5 cartas na mão. Descarte o excedente.</p>
 
-    <h3>17. Estrutura do Turno</h3>
-    <ol>
-      <li>Início — ganha +3 PA</li>
-      <li>Compra — compra 1 carta</li>
-      <li>Fase Principal 1</li>
-      <li>Fase de Batalha</li>
-      <li>Fase Principal 2</li>
-      <li>Fase Final</li>
-    </ol>
-    <p>Limite de 5 cartas na mão. Descarte o excedente.</p>
+      <h3>18. Condições Negativas</h3>
+      <ul>
+        <li>Cada criatura pode possuir apenas 1 condição negativa por vez.</li>
+        <li>O dano progressivo é 20 → 40 → 80 → dobra a cada turno.</li>
+        <li>Se uma criatura com condição negativa for enviada da Zona de Criaturas para a Pilha de Descarte, a Fera Mítica do controlador sofre 25 de dano.</li>
+        <li>Isso não se aplica a efeitos que retornem a carta à mão ou ao Deck.</li>
+      </ul>
+      <p><strong>Tipos de condição:</strong></p>
+      <ul>
+        <li><strong>Queimadura (Fogo):</strong> ataques contra a criatura ignoram metade da DEF.</li>
+        <li><strong>Veneno (Terra):</strong> ATK reduzido pela metade.</li>
+        <li><strong>Resfriamento (Água):</strong> ao atacar, jogue uma moeda; cara ataca, coroa falha.</li>
+        <li><strong>Turbulência (Ar):</strong> efeitos negados; não pode mudar posição nem ser sacrificada.</li>
+      </ul>
 
-    <h3>18. Condições Negativas</h3>
-    <ul>
-      <li>Cada criatura pode possuir apenas 1 condição negativa por vez.</li>
-      <li>O dano progressivo é 20 → 40 → 80 → dobra a cada turno.</li>
-      <li>Se uma criatura com condição negativa for enviada da Zona de Criaturas para a Pilha de Descarte, a Fera Mítica do controlador sofre 25 de dano.</li>
-      <li>Isso não se aplica a efeitos que retornem a carta à mão ou ao Deck.</li>
-    </ul>
-    <p><strong>Tipos de condição:</strong></p>
-    <ul>
-      <li><strong>Queimadura (Fogo):</strong> ataques contra a criatura ignoram metade da DEF.</li>
-      <li><strong>Veneno (Terra):</strong> ATK reduzido pela metade.</li>
-      <li><strong>Resfriamento (Água):</strong> ao atacar, jogue uma moeda; cara ataca, coroa falha.</li>
-      <li><strong>Turbulência (Ar):</strong> efeitos negados; não pode mudar posição nem ser sacrificada.</li>
-    </ul>
+      <h3>19. Instinto Primordial</h3>
+      <p><strong>Condição de ativação:</strong></p>
+      <ul>
+        <li>Quando a Fera Mítica estiver com metade ou menos do HP.</li>
+        <li>Só pode ser ativado no início do turno.</li>
+        <li>Apenas uma vez por duelo.</li>
+      </ul>
+      <p><strong>Efeitos:</strong></p>
+      <ul>
+        <li>Compre cartas até possuir 5 cartas na mão.</li>
+        <li>Dobre o ganho base de PA naquele turno.</li>
+      </ul>
+      <p>Apenas o ganho base de PA é duplicado. Bônus adicionais, como os da Carta de Campo, não são duplicados.</p>
 
-    <h3>19. Instinto Primordial</h3>
-    <p><strong>Condição de ativação:</strong></p>
-    <ul>
-      <li>Quando a Fera Mítica estiver com metade ou menos do HP.</li>
-      <li>Só pode ser ativado no início do turno.</li>
-      <li>Apenas uma vez por duelo.</li>
-    </ul>
-    <p><strong>Efeitos:</strong></p>
-    <ul>
-      <li>Compre cartas até possuir 5 cartas na mão.</li>
-      <li>Dobre o ganho base de PA naquele turno.</li>
-    </ul>
-    <p>Apenas o ganho base de PA é duplicado. Bônus adicionais, como os da Carta de Campo, não são duplicados.</p>
-
-    <button onclick="closeRules()">Fechar</button>
-  </div>
-</div>
-
-<!-- MODAL PERFIL -->
-<div id="profileModal" class="modal" onclick="closeProfileOnOverlay(event)">
-  <div class="modal-content profile-modal-content">
-    <h2>Perfil</h2>
-
-    <div class="profile-form">
-      <label for="profileNameInput">Nome do jogador</label>
-      <input id="profileNameInput" placeholder="Seu nome" maxlength="20">
-
-      <div class="profile-avatar-preview-wrap">
-        <div class="profile-avatar-preview-label">Avatar selecionado</div>
-        <div class="profile-avatar-preview">
-          <img id="profileAvatarPreview" src="assets/avatars/defaults/avatar-default.png" alt="Avatar selecionado">
-        </div>
-      </div>
-
-      <div class="profile-avatar-section">
-        <div class="profile-avatar-section-title">Escolha seu avatar</div>
-        <div id="profileAvatarGrid" class="profile-avatar-grid"></div>
-      </div>
-
-      <div class="profile-actions">
-        <button onclick="saveProfile()">Salvar</button>
-        <button onclick="closeProfile()">Fechar</button>
-      </div>
+      <button onclick="closeRules()">Fechar</button>
     </div>
   </div>
-</div>
 
-<!-- PREVIEW CARTA -->
-<div id="cardPreviewModal" class="modal" onclick="closeCardPreviewOnOverlay(event)">
-  <div class="preview-content">
-    <div id="previewCardArea"></div>
-  </div>
-</div>
-<div id="deckPreviewModal" class="modal" onclick="closeDeckPreviewOnOverlay(event)">
-  <div class="modal-content deck-preview-content">
-    <div class="deck-preview-header">
-      <h2 id="deckPreviewTitle">Lista do Deck</h2>
-      <button onclick="closeDeckPreview()">Fechar</button>
+  <!-- MODAL PERFIL -->
+  <div id="profileModal" class="modal" onclick="closeProfileOnOverlay(event)">
+    <div class="modal-content profile-modal-content">
+      <h2>Perfil</h2>
+
+      <div class="profile-form">
+        <label for="profileNameInput">Nome do jogador</label>
+        <input id="profileNameInput" placeholder="Seu nome" maxlength="20">
+
+        <div class="profile-avatar-preview-wrap">
+          <div class="profile-avatar-preview-label">Avatar selecionado</div>
+          <div class="profile-avatar-preview">
+            <img id="profileAvatarPreview" src="assets/avatars/defaults/avatar-default.png" alt="Avatar selecionado">
+          </div>
+        </div>
+
+        <div class="profile-avatar-section">
+          <div class="profile-avatar-section-title">Escolha seu avatar</div>
+          <div id="profileAvatarGrid" class="profile-avatar-grid"></div>
+        </div>
+
+        <div class="profile-actions">
+          <button onclick="saveProfile()">Salvar</button>
+          <button onclick="closeProfile()">Fechar</button>
+        </div>
+      </div>
     </div>
-
-    <div id="deckPreviewBody" class="deck-preview-body"></div>
   </div>
-</div>
-<div id="contextMenu" class="context-menu"></div>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="app.js"></script>
+  <!-- PREVIEW CARTA -->
+  <div id="cardPreviewModal" class="modal" onclick="closeCardPreviewOnOverlay(event)">
+    <div class="preview-content">
+      <div id="previewCardArea"></div>
+    </div>
+  </div>
+
+  <!-- PREVIEW DECK -->
+  <div id="deckPreviewModal" class="modal" onclick="closeDeckPreviewOnOverlay(event)">
+    <div class="modal-content deck-preview-content">
+      <div class="deck-preview-header">
+        <h2 id="deckPreviewTitle">Lista do Deck</h2>
+        <button onclick="closeDeckPreview()">Fechar</button>
+      </div>
+
+      <div id="deckPreviewBody" class="deck-preview-body"></div>
+    </div>
+  </div>
+
+  <!-- MENU CONTEXTO -->
+  <div id="contextMenu" class="context-menu"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
