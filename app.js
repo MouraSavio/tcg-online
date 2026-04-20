@@ -306,6 +306,56 @@ const DECKS = {
       "trapaca-moeda",
       "ultimas-consequencias"
     ]
+  },
+  vento: {
+    displayName: "Deck de Vento",
+    mythic: "daerikal-imperador-vento",
+    creatures: [
+      "aguia-ventos",
+      "aguia-ventos",
+      "general-harpia-layra",
+      "general-harpia-layra",
+      "general-harpia-nayra",
+      "general-harpia-nayra",
+      "general-harpia-zaya",
+      "general-harpia-zaya",
+      "harpia-ventos",
+      "harpia-ventos",
+      "rainha-harpia-tissaya",
+      "hipogrifo",
+      "hipogrifo-tempestade",
+      "pequeno-grifo",
+      "tifao"
+    ],
+    spells: [
+      "bencao-milagrosa",
+      "compra-graciosa",
+      "furacao-harpia",
+      "lupa-milagrosa",
+      "pesquisa-arcana",
+      "pocao-mana",
+      "pote-ambicao",
+      "pote-gula",
+      "quebra-feitico",
+      "reino-ventos-sagrados",
+      "renascimento-sagrado",
+      "retorno-fluxo-arcano",
+      "sede-poder",
+      "vinculo-harpia",
+      "vinculo-harpia"
+    ],
+    traps: [
+      "aprisionamento-eterno",
+      "buraco-armadilha",
+      "chamado-cova",
+      "contragolpe",
+      "julgamento-divino",
+      "ofensiva-quebrada",
+      "peso-dobrado",
+      "reversao-espelho",
+      "selamento-feitico",
+      "selamento-trapaca"
+    ]
   }
 };
 
@@ -366,7 +416,8 @@ function getDeckBoxImage(deckKey) {
     fogo: "deckbox-fogo.png",
     agua: "deckbox-agua.png",
     ferragon: "deckbox-terra.png",
-    "cassino-goblin": "deckbox-terra.png"
+    "cassino-goblin": "deckbox-terra.png",
+    vento: "deckbox-vento.png"
   };
 
   const fileName = deckBoxMap[deckKey];
