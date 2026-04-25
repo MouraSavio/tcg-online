@@ -14,6 +14,11 @@ const remoteSelections = {
   p2: null
 };
 
+let currentDeckSelections = {
+  p1: null,
+  p2: null
+};
+
 let currentPA1 = 0;
 let currentPA2 = 0;
 let currentMythicHP1 = 500;
@@ -837,17 +842,8 @@ function closeDeckPreviewOnOverlay(event) {
 function selectDeck(deck) {
   selectedDeck = deck;
 
-  const label = document.getElementById("selectedDeckLabel");
-  if (!label) return;
-
-  const deckData = DECKS[deck];
-
-  if (deckData) {
-    label.textContent = "Selecionado: " + deckData.displayName;
-  } else {
-    label.textContent = "Deck não configurado";
-  }
-
+  // Salva localmente a seleção antes do servidor responder
+  currentDeckSelections[myRole] = deck;
   socket.emit("selectDeck", { roomId, deck });
 }
 
@@ -866,8 +862,46 @@ function startGame() {
     return;
   }
 
+  const oppRole = getOpponentRole(myRole);
+  if (!currentDeckSelections[oppRole]) {
+    alert("Aguarde o oponente escolher um deck!");
+    return;
+  }
+
   socket.emit("playerReady", { roomId });
-  console.log("Você marcou como pronto.");
+}
+
+function closeGameOverModal() {
+  const modal = document.getElementById("gameOverModal");
+  if (modal) modal.style.display = "none";
+}
+
+function updateDeckSelectionUI(deckSelections) {
+  const label = document.getElementById("selectedDeckLabel");
+  const btn = document.getElementById("startGameBtn");
+  if (!label) return;
+
+  const myDeckKey = deckSelections[myRole];
+  const oppRole = getOpponentRole(myRole);
+  const oppDeckKey = oppRole ? deckSelections[oppRole] : null;
+
+  const myName = myDeckKey && DECKS[myDeckKey] ? DECKS[myDeckKey].displayName : "Nenhum";
+  const oppName = oppDeckKey && DECKS[oppDeckKey] ? DECKS[oppDeckKey].displayName : "Escolhendo...";
+
+  label.innerHTML = `Seu Deck: <span class="highlight">${myName}</span> | Oponente: <span class="highlight">${oppName}</span>`;
+
+  if (btn) {
+    if (myDeckKey && oppDeckKey) {
+      btn.classList.add("ready-to-start");
+      btn.textContent = "Iniciar Partida!";
+    } else if (myDeckKey && !oppDeckKey) {
+      btn.classList.remove("ready-to-start");
+      btn.textContent = "Aguardando oponente...";
+    } else {
+      btn.classList.remove("ready-to-start");
+      btn.textContent = "Começar";
+    }
+  }
 }
 
 function startSynchronizedGame(decks, matchState) {
@@ -897,6 +931,7 @@ function startSynchronizedGame(decks, matchState) {
   closeContextMenu();
   closeCardPreview();
   clearAttackArrow();
+  closeGameOverModal();
 
   applyServerStateToUI();
   renderBoard();
@@ -1455,13 +1490,13 @@ function applyTurnGain(player, inputId = null) {
   });
 }
 
-function animateResultBox(elementId) {
+function animateResultBox(elementId, animClass = "animating") {
   const el = document.getElementById(elementId);
   if (!el) return;
 
-  el.classList.remove("animating");
+  el.classList.remove("animating", "animating-coin", "animating-dice");
   void el.offsetWidth;
-  el.classList.add("animating");
+  el.classList.add(animClass);
 }
 function serializeAnimationCard(card) {
   if (!card) return null;
@@ -1781,6 +1816,34 @@ function renderPile(zoneEl, playerKey, containerKey) {
     openPileMenu(event.clientX, event.clientY, playerKey, containerKey);
   };
 
+  // Cria o volume 3D: limitamos até 40 cartas para a sombra não sair da tela. 
+  // Multiplicamos por 0.5 pixels por carta.
+  const visualDepth = Math.min(pile.length, 40) * 0.5;
+  pileEl.style.setProperty("--stack-depth", `${visualDepth}px`);
+
+  if (pile.length > 0) {
+    if (containerKey === "discardPile") {
+      const topCard = pile[pile.length - 1];
+      if (topCard && topCard.image) {
+        const img = document.createElement("img");
+        img.src = topCard.image;
+        img.className = "card-image discard-top-card";
+        pileEl.appendChild(img);
+      } else if (topCard) {
+        const fallback = createPlaceholder(topCard.name);
+        fallback.classList.add("discard-top-card");
+        pileEl.appendChild(fallback);
+      }
+    } else {
+      const back = document.createElement("div");
+      back.className = "card-back";
+      back.style.position = "absolute";
+      back.style.inset = "0";
+      back.style.zIndex = "1";
+      pileEl.appendChild(back);
+    }
+  }
+
   const title = document.createElement("div");
   title.className = "pile-title";
   title.textContent = ZONE_LABELS[containerKey];
@@ -1832,13 +1895,12 @@ function createCardElement(card, playerKey, containerKey, options = {}) {
   const cardEl = document.createElement("div");
   cardEl.className = "card";
 
+  const opponentRole = getOpponentRole(myRole);
+
   if (state.selectedCardId === card.id) {
     cardEl.classList.add("selected");
-  }
-
-  const opponentRole = getOpponentRole(myRole);
-  if (opponentRole && remoteSelections[opponentRole] === card.id) {
-    cardEl.classList.add("selected");
+  } else if (opponentRole && remoteSelections[opponentRole] === card.id) {
+    cardEl.classList.add("opponent-selected");
   }
 
   if (card.rotated) {
@@ -2114,6 +2176,13 @@ menu.appendChild(menuButton("Embaralhar", () => shufflePile(playerKey, container
   if (state.openMenu.type === "card") {
     const { cardId, playerKey, containerKey, x, y } = state.openMenu;
 
+    const card = findCardInContainer(playerKey, containerKey, cardId);
+    if (card && card.faceDown && playerKey === myRole) {
+      menu.appendChild(
+        menuButton("Visualizar (Privado)", () => openCardPreview(card, false))
+      );
+    }
+
     // 1. efeito
 if (canUseEffect(cardId, playerKey, containerKey)) {
   menu.appendChild(menuButton("Efeito", () => triggerCardEffect(cardId)));
@@ -2372,7 +2441,7 @@ function animateShuffle(element) {
 
   setTimeout(() => {
     element.classList.remove("shuffling");
-  }, 450);
+  }, 600);
 }
 function animatePileShuffle(playerKey, zoneKey) {
   const uiZone = serverZoneToUiZone(zoneKey);
@@ -2388,7 +2457,7 @@ function animatePileShuffle(playerKey, zoneKey) {
 
   setTimeout(() => {
     pileEl.classList.remove("shuffling");
-  }, 450);
+  }, 600);
 }
 function findCardInContainer(playerKey, containerKey, cardId) {
   if (playerKey === myRole && isDeckLikeZone(containerKey)) {
@@ -2764,6 +2833,20 @@ function showErrorToast(message) {
   }, 2200);
 }
 
+function surrenderMatch() {
+  if (confirm("Tem certeza que deseja desistir da partida?")) {
+    socket.emit("surrenderMatch", { roomId });
+  }
+}
+
+function requestRematch() {
+  socket.emit("requestRematch", { roomId });
+}
+
+function requestReturnToDeckSelection() {
+  socket.emit("returnToDeckSelection", { roomId });
+}
+
 /* SOCKET EVENTS */
 
 socket.on("connect", () => {
@@ -2803,6 +2886,8 @@ socket.on("playersInRoom", (players) => {
 
 socket.on("deckSelectionsUpdated", (deckSelections) => {
   console.log("Decks escolhidos:", deckSelections);
+  currentDeckSelections = deckSelections;
+  updateDeckSelectionUI(deckSelections);
 });
 
 socket.on("playersProfileUpdated", (profiles) => {
@@ -2863,21 +2948,28 @@ socket.on("privatePileViewData", ({ playerKey, pileType, cards }) => {
 });
 
 socket.on("diceRolled", ({ value }) => {
-  animateResultBox("diceResult");
+  animateResultBox("diceResult", "animating-dice");
 
   setTimeout(() => {
-    const el = document.getElementById("diceResult");
-    if (el) el.textContent = "Dado: " + value;
-  }, 180);
+    const textEl = document.getElementById("diceResultText");
+    const imgEl = document.getElementById("diceResultImg");
+    if (textEl) textEl.textContent = value;
+    if (imgEl) imgEl.style.display = "block";
+  }, 400); // Exibe o resultado exatamente no meio da animação de giro
 });
 
 socket.on("coinFlipped", ({ value }) => {
-  animateResultBox("coinResult");
+  animateResultBox("coinResult", "animating-coin");
 
   setTimeout(() => {
-    const el = document.getElementById("coinResult");
-    if (el) el.textContent = "Moeda: " + value;
-  }, 180);
+    const textEl = document.getElementById("coinResultText");
+    const imgEl = document.getElementById("coinResultImg");
+    if (textEl) textEl.textContent = value;
+    if (imgEl) {
+      imgEl.src = value === "Cara" ? "assets/ui/coins/coin-heads.png" : "assets/ui/coins/coin-tails.png";
+      imgEl.style.display = "block";
+    }
+  }, 400); // Exibe o resultado exatamente no meio da animação de giro
 });
 
 socket.on("handUpdated", () => {
@@ -2908,12 +3000,45 @@ socket.on("pileShuffled", ({ playerKey, pileType }) => {
   animatePileShuffle(playerKey, pileType);
 });
 
+socket.on("matchEnded", ({ winner, loser, reason }) => {
+  const modal = document.getElementById("gameOverModal");
+  const title = document.getElementById("gameOverTitle");
+  if (!modal || !title) return;
+
+  if (winner === myRole) {
+    title.textContent = "Você Venceu!";
+    title.className = "win";
+  } else {
+    title.textContent = "Você Perdeu!";
+    title.className = "lose";
+  }
+
+  modal.style.display = "block";
+});
+
+socket.on("goToDeckSelection", () => {
+  closeGameOverModal();
+  goToDeck();
+  const btn = document.getElementById("startGameBtn");
+  if (btn) btn.classList.remove("ready-to-start");
+});
+
 /* DOM EVENTS */
 
 document.addEventListener("click", (event) => {
   const menu = document.getElementById("contextMenu");
   if (menu && !menu.contains(event.target)) {
     closeContextMenu();
+  }
+
+  const isBoardBackground =
+    event.target.id === "boardScreen" ||
+    event.target.classList.contains("board-main-layout") ||
+    event.target.classList.contains("board-stage") ||
+    event.target.classList.contains("field-row");
+
+  if (isBoardBackground && state.selectedCardId) {
+    selectCard(null); // Desmarca ao clicar no fundo
   }
 });
 
@@ -2926,6 +3051,10 @@ document.addEventListener("DOMContentLoaded", () => {
   loadProfileIntoModal();
   updateChatPerspectiveProfile();
   bindChatEvents();
+
+  if (myRole && currentDeckSelections) {
+    updateDeckSelectionUI(currentDeckSelections);
+  }
 
   const hpInput1 = document.getElementById("hpChange1");
   const hpInput2 = document.getElementById("hpChange2");
@@ -2978,3 +3107,6 @@ window.saveProfile = saveProfile;
 window.closeCardPreviewOnOverlay = closeCardPreviewOnOverlay;
 window.closeDeckPreview = closeDeckPreview;
 window.closeDeckPreviewOnOverlay = closeDeckPreviewOnOverlay;
+window.surrenderMatch = surrenderMatch;
+window.requestRematch = requestRematch;
+window.requestReturnToDeckSelection = requestReturnToDeckSelection;

@@ -36,7 +36,7 @@
 
     <div id="selectedDeckLabel" class="selected-deck-label"></div>
 
-    <button onclick="startGame()">Começar</button>
+    <button id="startGameBtn" onclick="startGame()">Começar</button>
     <button onclick="goHome()">Voltar</button>
   </div>
 
@@ -125,11 +125,25 @@
             <div id="phaseButtons" class="phases"></div>
 
             <div class="turn-tools">
-              <button class="inline-tool-btn" onclick="rollDice()">🎲 Dado</button>
-              <div id="diceResult" class="result-box compact-result-box">Dado: -</div>
+              <button class="inline-tool-btn" onclick="rollDice()">
+                <img src="assets/ui/dice/dice-icon.png" class="btn-icon" alt="Dado"> Dado
+              </button>
+              <div id="diceResult" class="result-box compact-result-box">
+                <div class="result-box-content">
+                  <img id="diceResultImg" src="assets/ui/dice/dice-icon.png" class="tool-icon" style="display: none;">
+                  <span id="diceResultText">Dado: -</span>
+                </div>
+              </div>
 
-              <button class="inline-tool-btn" onclick="flipCoin()">🪙 Moeda</button>
-              <div id="coinResult" class="result-box compact-result-box">Moeda: -</div>
+              <button class="inline-tool-btn" onclick="flipCoin()">
+                <img src="assets/ui/coins/coin-heads.png" class="btn-icon" alt="Moeda"> Moeda
+              </button>
+              <div id="coinResult" class="result-box compact-result-box">
+                <div class="result-box-content">
+                  <img id="coinResultImg" src="assets/ui/coins/coin-heads.png" class="tool-icon" style="display: none;">
+                  <span id="coinResultText">Moeda: -</span>
+                </div>
+              </div>
             </div>
 
             <div id="battleStatus" class="battle-status"></div>
@@ -232,6 +246,7 @@
       </div>
     </div>
 
+        <button class="back-button surrender-button" onclick="surrenderMatch()">Desistir</button>
     <button class="back-button back-button-board" onclick="goHome()">Voltar</button>
   </div>
 
@@ -515,6 +530,17 @@
 
   <!-- MENU CONTEXTO -->
   <div id="contextMenu" class="context-menu"></div>
+
+  <!-- GAME OVER MODAL -->
+  <div id="gameOverModal" class="modal">
+    <div class="modal-content game-over-content">
+      <h2 id="gameOverTitle">Você Venceu!</h2>
+      <div class="game-over-buttons">
+        <button onclick="requestRematch()" class="deck-action-btn deck-action-btn-primary">Nova Partida</button>
+        <button onclick="requestReturnToDeckSelection()" class="deck-action-btn deck-action-btn-secondary">Trocar Decks</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="app.js"></script>

@@ -574,6 +574,36 @@ function emitRoomProfiles(roomId, room) {
   });
 }
 
+function startRoomMatch(roomId, room) {
+  room.matchState = createMatchState(room);
+
+  const p1Decks = buildDeckState(room.deckSelections.p1, "p1");
+  const p2Decks = buildDeckState(room.deckSelections.p2, "p2");
+
+  room.matchState.players.p1.mainDeck = p1Decks.mainDeck;
+  room.matchState.players.p1.trapDeck = p1Decks.trapDeck;
+  room.matchState.players.p2.mainDeck = p2Decks.mainDeck;
+  room.matchState.players.p2.trapDeck = p2Decks.trapDeck;
+
+  const p1Mythic = buildMythicCard(room.deckSelections.p1, "p1");
+  if (p1Mythic) room.matchState.players.p1.mythic.push(p1Mythic);
+
+  const p2Mythic = buildMythicCard(room.deckSelections.p2, "p2");
+  if (p2Mythic) room.matchState.players.p2.mythic.push(p2Mythic);
+
+  if (room.matchState.players.p1.mainDeck.length > 0) {
+    room.matchState.players.p1.hand.push(room.matchState.players.p1.mainDeck.pop());
+  }
+  if (room.matchState.players.p2.mainDeck.length > 0) {
+    room.matchState.players.p2.hand.push(room.matchState.players.p2.mainDeck.pop());
+  }
+
+  io.to(roomId).emit("startMatch", {
+    decks: room.deckSelections,
+    matchState: getPublicMatchState(room.matchState)
+  });
+}
+
 io.on("connection", (socket) => {
   console.log("Jogador conectado:", socket.id);
 
@@ -694,37 +724,53 @@ io.on("connection", (socket) => {
     if (!player) return;
 
     room.ready[player.role] = true;
+    if (room.deckSelections.p1 && room.deckSelections.p2) {
+      room.ready.p1 = true;
+      room.ready.p2 = true;
+    } else {
+      room.ready[player.role] = true;
+    }
 
     console.log(`Sala ${roomId}: ${player.role} está pronto`);
     io.to(roomId).emit("readyStatus", room.ready);
 
     if (room.ready.p1 && room.ready.p2) {
-      console.log(`Sala ${roomId}: partida iniciando`);
-
-      room.matchState = createMatchState(room);
-
-      const p1DeckState = buildDeckState(room.deckSelections.p1, "p1");
-      const p2DeckState = buildDeckState(room.deckSelections.p2, "p2");
-
-      room.matchState.players.p1.mainDeck = p1DeckState.mainDeck;
-      room.matchState.players.p1.trapDeck = p1DeckState.trapDeck;
-
-      room.matchState.players.p2.mainDeck = p2DeckState.mainDeck;
-      room.matchState.players.p2.trapDeck = p2DeckState.trapDeck;
-
-      const p1Mythic = buildMythicCard(room.deckSelections.p1, "p1");
-      const p2Mythic = buildMythicCard(room.deckSelections.p2, "p2");
-
-      if (p1Mythic) room.matchState.players.p1.mythic.push(p1Mythic);
-      if (p2Mythic) room.matchState.players.p2.mythic.push(p2Mythic);
-
-      io.to(roomId).emit("startMatch", {
-        decks: room.deckSelections,
-        matchState: getPublicMatchState(room.matchState)
-      });
-
-      emitRoomState(roomId, room);
+      startRoomMatch(roomId, room);
     }
+  });
+
+  socket.on("surrenderMatch", ({ roomId }) => {
+    const result = getRoomAndPlayer(roomId, socket.id);
+    if (!result) return;
+    const { player } = result;
+
+    const winner = getOpponentRole(player.role);
+    io.to(roomId).emit("matchEnded", {
+      winner,
+      loser: player.role,
+      reason: "surrender"
+    });
+  });
+
+  socket.on("requestRematch", ({ roomId }) => {
+    const result = getRoomAndPlayer(roomId, socket.id);
+    if (!result) return;
+    const { room } = result;
+
+    if (!room.deckSelections.p1 || !room.deckSelections.p2) return;
+    startRoomMatch(roomId, room);
+  });
+
+  socket.on("returnToDeckSelection", ({ roomId }) => {
+    const result = getRoomAndPlayer(roomId, socket.id);
+    if (!result) return;
+    const { room } = result;
+
+    room.ready = {};
+    room.matchState = null;
+
+    io.to(roomId).emit("goToDeckSelection");
+    io.to(roomId).emit("readyStatus", room.ready);
   });
 
   socket.on("requestPrivatePileView", ({ roomId, pileType }) => {
