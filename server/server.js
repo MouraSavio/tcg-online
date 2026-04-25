@@ -236,6 +236,55 @@ const SERVER_DECKS = {
       "selamento-feitico",
       "selamento-trapaca"
     ]
+  },
+   espadachim: {
+    mythic: "terrakhor-soberano",
+    creatures: [
+      "akuma-ronin",
+      "aspirante-kojiro",
+      "aspirante-musashi",
+      "daizen-kenshin",
+      "discipulo-espadachim",
+      "discipulo-espadachim",
+      "discipula-espadachim",
+      "discipula-espadachim",
+      "espadachim-mestra",
+      "espadachim-mestre",
+      "killbee-espadachim",
+      "killbee-espadachim",
+      "kojiro-mestre-espada",
+      "mestra-killbee",
+      "musashi-mestre-nitoryu"
+    ],
+    spells: [
+      "arte-forja",
+      "bushido",
+      "caminho-espada",
+      "caminho-espada",
+      "dojo-espadachim",
+      "ferrao-dourado",
+      "kamaitachi",
+      "katana-afiada",
+      "katana-afiada",
+      "kesa-giri",
+      "kesa-giri",
+      "onryo",
+      "seiryu",
+      "terra-sagrada",
+      "pocao-mana"
+    ],
+    traps: [
+      "caminho-renegado",
+      "chuva-mil-laminas",
+      "confronto-equilibrado",
+      "contragolpe",
+      "corte-x",
+      "defesa-impenetravel",
+      "julgamento-divino",
+      "ofensiva-quebrada",
+      "reversao-espelho",
+      "vinganca-onryo"
+    ]
   }
 };
 

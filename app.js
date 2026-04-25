@@ -356,6 +356,57 @@ const DECKS = {
       "selamento-feitico",
       "selamento-trapaca"
     ]
+  },
+  
+  espadachim: {
+    displayName: "Deck Espadachim",
+    mythic: "terrakhor-soberano",
+    creatures: [
+      "akuma-ronin",
+      "aspirante-kojiro",
+      "aspirante-musashi",
+      "daizen-kenshin",
+      "discipulo-espadachim",
+      "discipulo-espadachim",
+      "discipula-espadachim",
+      "discipula-espadachim",
+      "espadachim-mestra",
+      "espadachim-mestre",
+      "killbee-espadachim",
+      "killbee-espadachim",
+      "kojiro-mestre-espada",
+      "mestra-killbee",
+      "musashi-mestre-nitoryu"
+    ],
+    spells: [
+      "arte-forja",
+      "bushido",
+      "caminho-espada",
+      "caminho-espada",
+      "dojo-espadachim",
+      "ferrao-dourado",
+      "kamaitachi",
+      "katana-afiada",
+      "katana-afiada",
+      "kesa-giri",
+      "kesa-giri",
+      "onryo",
+      "seiryu",
+      "terra-sagrada",
+      "pocao-mana"
+    ],
+    traps: [
+      "caminho-renegado",
+      "chuva-mil-laminas",
+      "confronto-equilibrado",
+      "contragolpe",
+      "corte-x",
+      "defesa-impenetravel",
+      "julgamento-divino",
+      "ofensiva-quebrada",
+      "reversao-espelho",
+      "vinganca-onryo"
+    ]
   }
 };
 
@@ -417,7 +468,8 @@ function getDeckBoxImage(deckKey) {
     agua: "deckbox-agua.png",
     ferragon: "deckbox-terra.png",
     "cassino-goblin": "deckbox-terra.png",
-    vento: "deckbox-vento.png"
+    vento: "deckbox-vento.png",
+    espadachim: "deckbox-espadachim.png"
   };
 
   const fileName = deckBoxMap[deckKey];
