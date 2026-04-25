@@ -1836,7 +1836,8 @@ function createCardElement(card, playerKey, containerKey, options = {}) {
     cardEl.classList.add("selected");
   }
 
-  if (remoteSelections[playerKey] === card.id && playerKey !== myRole) {
+  const opponentRole = getOpponentRole(myRole);
+  if (opponentRole && remoteSelections[opponentRole] === card.id) {
     cardEl.classList.add("selected");
   }
 
