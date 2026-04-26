@@ -3,6 +3,27 @@ const socket = io();
 let myRole = null;
 let serverMatchState = null;
 let selectedDeck = null;
+
+const audioManager = {
+  sounds: {
+    clique: "assets/sounds/clique.mp3",
+    embaralhamento: "assets/sounds/embaralhamento.mp3",
+    comprar: "assets/sounds/comprar.mp3",
+    revelar: "assets/sounds/revelar.mp3",
+    efeito: "assets/sounds/efeito.mp3",
+    ataque: "assets/sounds/ataque.mp3",
+    cartaZona: "assets/sounds/carta-zona.mp3",
+    criaturaInvocacao: "assets/sounds/criatura-invocacao.mp3",
+    magiaAtivacao: "assets/sounds/magia-ativacao.mp3"
+  },
+  play(name) {
+    if (this.sounds[name]) {
+      const audio = new Audio(this.sounds[name]);
+      audio.play().catch(err => console.warn("Áudio bloqueado pelo navegador:", err));
+    }
+  }
+};
+
 let errorToastTimeout = null;
 let chatMessagesState = [];
 let manualBoardZoom = 1;
@@ -1612,6 +1633,22 @@ function buildAnimationCardElement(card, hidden) {
 function animateCardTravel(payload) {
   if (!payload) return;
 
+  const isCreatureZone = payload.toZone === "creature1" || payload.toZone === "creature2" || payload.toZone === "creature3" || payload.toZone === "mythic";
+  const isCreatureCard = payload.card && (payload.card.type === "creature" || payload.card.type === "mythic");
+
+  const isMagicZone = payload.toZone === "magic1" || payload.toZone === "magic2" || payload.toZone === "magic3" || payload.toZone === "magic4" || payload.toZone === "field";
+  const isMagicCard = payload.card && payload.card.type === "spell";
+
+  if (payload.kind === "draw" || payload.toZone === "hand") {
+    audioManager.play("comprar");
+  } else if (isCreatureCard && isCreatureZone) {
+    audioManager.play("criaturaInvocacao");
+  } else if (isMagicCard && isMagicZone) {
+    audioManager.play("magiaAtivacao");
+  } else {
+    audioManager.play("cartaZona");
+  }
+
   const boardScreen = document.getElementById("boardScreen");
   if (!boardScreen || !boardScreen.classList.contains("active")) return;
 
@@ -1681,17 +1718,66 @@ function animateCardTravel(payload) {
   }, 420);
 }
 
-function animateEffectByCardId(cardId) {
-  const cardEl = document.getElementById(`card-${cardId}`);
-  if (!cardEl) return;
+function animateEffectByCardId(cardId, serverCard) {
+  audioManager.play("efeito");
 
-  cardEl.classList.remove("effect-activated");
-  void cardEl.offsetWidth;
-  cardEl.classList.add("effect-activated");
+  const cardEl = document.getElementById(`card-${cardId}`);
+  if (cardEl) {
+    cardEl.classList.remove("effect-activated");
+    void cardEl.offsetWidth;
+    cardEl.classList.add("effect-activated");
+
+    setTimeout(() => {
+      cardEl.classList.remove("effect-activated");
+    }, 650);
+  }
+
+  let localCard = null;
+  if (serverCard) {
+    localCard = hydrateServerCard(serverCard, serverCard.ownerRole || "p1");
+  } else {
+    const loc = findCardLocation(cardId);
+    if (loc) localCard = loc.card;
+  }
+
+  if (localCard && localCard.image) {
+    showLargeEffectImage(localCard.image);
+  }
+}
+
+function showLargeEffectImage(imageSrc) {
+  const existing = document.getElementById("effectLargeOverlay");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "effectLargeOverlay";
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.zIndex = "9999";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.pointerEvents = "none";
+  overlay.style.background = "radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 75%)";
+  overlay.style.animation = "effectOverlayFade 1s ease-out forwards";
+
+  const img = document.createElement("img");
+  img.src = imageSrc;
+  img.style.height = "75vh";
+  img.style.maxWidth = "90vw";
+  img.style.objectFit = "contain";
+  img.style.borderRadius = "18px";
+  img.style.boxShadow = "0 0 60px rgba(255, 209, 102, 0.6), 0 0 20px rgba(255, 255, 255, 0.3)";
+  img.style.animation = "effectCardPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards";
+
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
 
   setTimeout(() => {
-    cardEl.classList.remove("effect-activated");
-  }, 650);
+    if (overlay.parentNode) {
+      overlay.remove();
+    }
+  }, 1000);
 }
 
 function animateAttackFromPayload(payload) {
@@ -2203,11 +2289,17 @@ menu.appendChild(
 );
 if (!PILE_CONTAINERS.includes(containerKey) && containerKey !== "hand") {
   menu.appendChild(
-    menuButton("Adicionar marcador", () => changeCardMarkers(cardId, playerKey, containerKey, 1))
+    menuButton("Adicionar marcador", () => {
+      audioManager.play("clique");
+      changeCardMarkers(cardId, playerKey, containerKey, 1);
+    })
   );
 
   menu.appendChild(
-    menuButton("Remover marcador", () => changeCardMarkers(cardId, playerKey, containerKey, -1))
+    menuButton("Remover marcador", () => {
+      audioManager.play("clique");
+      changeCardMarkers(cardId, playerKey, containerKey, -1);
+    })
   );
 }
 // resto
@@ -2226,12 +2318,6 @@ menu.appendChild(
 menu.appendChild(
   menuButton("Enviar ao descarte", () =>
     moveCard(cardId, playerKey, containerKey, myRole, "discardPile")
-  )
-);
-
-menu.appendChild(
-  menuButton("Colocar em zona...", () =>
-    openZoneChoiceMenu(x + 210, y, cardId, playerKey, containerKey)
   )
 );
   }
@@ -2435,6 +2521,8 @@ function shuffleHand(playerKey) {
 }
 
 function animateShuffle(element) {
+  audioManager.play("embaralhamento");
+
   element.classList.remove("shuffling");
   void element.offsetWidth;
   element.classList.add("shuffling");
@@ -2444,6 +2532,8 @@ function animateShuffle(element) {
   }, 600);
 }
 function animatePileShuffle(playerKey, zoneKey) {
+  audioManager.play("embaralhamento");
+
   const uiZone = serverZoneToUiZone(zoneKey);
   const pileZone = document.getElementById(`zone-${playerKey}-${uiZone}`);
   if (!pileZone) return;
@@ -2575,6 +2665,8 @@ function toggleFaceDown(cardId, playerKey, containerKey) {
   const card = findCardInContainer(playerKey, containerKey, cardId);
   if (!card) return;
 
+  audioManager.play("revelar");
+
   socket.emit("setCardFaceDown", {
     roomId,
     playerKey,
@@ -2626,7 +2718,9 @@ function canUseEffect(cardId, playerKey, containerKey) {
     "magic1",
     "magic2",
     "magic3",
-    "magic4"
+    "magic4",
+    "hand",
+    "discardPile"
   ];
 
   if (!allowedZones.includes(containerKey)) return false;
@@ -2678,6 +2772,8 @@ function resolveAttack(targetPlayerKey, targetContainerKey) {
 }
 
 function animateAttackArrow(sourceEl, targetEl) {
+  audioManager.play("ataque");
+
   clearAttackArrow();
 
   const svg = document.getElementById("attackLayer");
@@ -2988,8 +3084,8 @@ socket.on("visualAction", (payload) => {
   animateCardTravel(payload);
 });
 
-socket.on("effectAnimation", ({ cardId }) => {
-  animateEffectByCardId(cardId);
+socket.on("effectAnimation", ({ cardId, card }) => {
+  animateEffectByCardId(cardId, card);
 });
 
 socket.on("attackAnimation", (payload) => {
@@ -3026,6 +3122,14 @@ socket.on("goToDeckSelection", () => {
 /* DOM EVENTS */
 
 document.addEventListener("click", (event) => {
+  const isButton = event.target.tagName === "BUTTON" || event.target.closest("button");
+  const isCardMenu = event.target.closest("#contextMenu");
+  const isCard = event.target.closest(".card");
+
+  if (isButton && !isCardMenu && !isCard) {
+    audioManager.play("clique");
+  }
+
   const menu = document.getElementById("contextMenu");
   if (menu && !menu.contains(event.target)) {
     closeContextMenu();

@@ -1046,7 +1046,8 @@ emitRoomState(roomId, room);
     io.to(roomId).emit("effectAnimation", {
       playerKey,
       zoneKey,
-      cardId
+      cardId,
+      card: serializeCard(card)
     });
   });
     socket.on(
