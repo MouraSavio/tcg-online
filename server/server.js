@@ -90,9 +90,8 @@ const SERVER_DECKS = {
       "kon-guarda-onirica",
       "kon-sentinela-onirica",
       "kon-urso-onirica",
+      "kon-urso-onirica",
       "primple-cavaleiro",
-      "primple-cavaleiro",
-      "primple-mago",
       "primple-mago",
       "primple-sonhador",
       "primple-sonhador",
@@ -104,6 +103,7 @@ const SERVER_DECKS = {
       "encorajamento-primple",
       "lupa-milagrosa",
       "oceano-primordial",
+      "pesquisa-arcana",
       "pesquisa-arcana",
       "pocao-mana",
       "pote-gula",
@@ -590,13 +590,6 @@ function startRoomMatch(roomId, room) {
 
   const p2Mythic = buildMythicCard(room.deckSelections.p2, "p2");
   if (p2Mythic) room.matchState.players.p2.mythic.push(p2Mythic);
-
-  if (room.matchState.players.p1.mainDeck.length > 0) {
-    room.matchState.players.p1.hand.push(room.matchState.players.p1.mainDeck.pop());
-  }
-  if (room.matchState.players.p2.mainDeck.length > 0) {
-    room.matchState.players.p2.hand.push(room.matchState.players.p2.mainDeck.pop());
-  }
 
   io.to(roomId).emit("startMatch", {
     decks: room.deckSelections,
