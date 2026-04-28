@@ -2014,6 +2014,12 @@ function createCardElement(card, playerKey, containerKey, options = {}) {
   cardEl.dataset.player = playerKey;
   cardEl.dataset.container = containerKey;
 
+  cardEl.addEventListener("dblclick", (event) => {
+    event.stopPropagation();
+    const showAsHidden = hidden && playerKey !== myRole;
+    openCardPreview(card, showAsHidden);
+  });
+
   cardEl.addEventListener("dragstart", (event) => {
     event.stopPropagation();
     closeContextMenu();
@@ -2026,6 +2032,20 @@ function createCardElement(card, playerKey, containerKey, options = {}) {
         containerKey
       })
     );
+
+    // Se o modal do Visualizador estiver aberto, nós o ocultamos
+    if (state.pileViewer) {
+      setTimeout(() => {
+        const modal = document.getElementById("pileViewerModal");
+        if (modal) modal.classList.add("hidden-for-drag");
+      }, 0);
+    }
+  });
+
+  cardEl.addEventListener("dragend", (event) => {
+    // Quando soltar a carta, restaura o modal do Visualizador
+    const modal = document.getElementById("pileViewerModal");
+    if (modal) modal.classList.remove("hidden-for-drag");
   });
 
   cardEl.addEventListener("click", (event) => {
@@ -2280,6 +2300,18 @@ menu.appendChild(menuButton("Embaralhar", () => shufflePile(playerKey, container
     const isInsideDeck = isDeckLikeZone(containerKey);
     const isMine = playerKey === myRole;
 
+    if (card) {
+      // Lógica universal de Visualização
+      const forceFaceUp = isMine && isInsideDeck;
+      const isHiddenToMe = forceFaceUp ? false : isCardHidden(card, playerKey, containerKey);
+
+      if (!isHiddenToMe) {
+        menu.appendChild(menuButton("Visualizar", () => openCardPreview(card, false)));
+      } else if (isMine) {
+        menu.appendChild(menuButton("Visualizar (Privado)", () => openCardPreview(card, false)));
+      }
+    }
+
     if (isInsideDeck && isMine) {
       menu.appendChild(menuButton("Virar / Revelar", () => toggleFaceDown(cardId, playerKey, containerKey)));
       menu.appendChild(menuButton("Girar", () => toggleRotation(cardId, playerKey, containerKey)));
@@ -2287,12 +2319,6 @@ menu.appendChild(menuButton("Embaralhar", () => shufflePile(playerKey, container
       menu.appendChild(menuButton("Enviar ao descarte", () => moveCard(cardId, playerKey, containerKey, myRole, "discardPile")));
       menu.appendChild(menuButton("Adicionar à zona de campo", () => openEmptyZoneChoiceMenu(x, y, cardId, playerKey, containerKey)));
     } else {
-      if (card && card.faceDown && playerKey === myRole) {
-        menu.appendChild(
-          menuButton("Visualizar (Privado)", () => openCardPreview(card, false))
-        );
-      }
-
       if (canUseEffect(cardId, playerKey, containerKey)) {
         menu.appendChild(menuButton("Efeito", () => triggerCardEffect(cardId)));
       }
