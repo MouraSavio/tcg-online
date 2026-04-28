@@ -1647,6 +1647,22 @@ function animateCardTravel(payload) {
   const isMagicZone = payload.toZone === "magic1" || payload.toZone === "magic2" || payload.toZone === "magic3" || payload.toZone === "magic4" || payload.toZone === "field";
   const isMagicCard = payload.card && payload.card.type === "spell";
 
+  const isBoardZone = ["mythic", "creature1", "creature2", "creature3", "field", "magic1", "magic2", "magic3", "magic4"].includes(payload.toZone);
+
+  // Revela a carta grande na tela se:
+  // 1) For buscada/recuperada para a mão vindo do deck ou descarte.
+  // 2) For colocada em uma zona do tabuleiro e estiver virada para cima.
+  if (
+    (payload.kind === "move" && payload.toZone === "hand" && ["mainDeck", "trapDeck", "discardPile"].includes(payload.fromZone)) ||
+    (isBoardZone && payload.card && !payload.card.faceDown)
+  ) {
+    const ownerRole = payload.card?.ownerRole || payload.toPlayer;
+    const hydratedCard = hydrateServerCard(payload.card, ownerRole);
+    if (hydratedCard && hydratedCard.image) {
+      showLargeEffectImage(hydratedCard.image);
+    }
+  }
+
   if (payload.kind === "draw" || payload.toZone === "hand") {
     audioManager.play("comprar");
   } else if (isCreatureCard && isCreatureZone) {
@@ -2342,6 +2358,9 @@ menu.appendChild(menuButton("Embaralhar", () => shufflePile(playerKey, container
       }
 
       menu.appendChild(menuButton("Adicionar à mão", () => moveCard(cardId, playerKey, containerKey, myRole, "hand")));
+      if (containerKey !== "hand") {
+        menu.appendChild(menuButton("Adicionar à mão", () => moveCard(cardId, playerKey, containerKey, myRole, "hand")));
+      }
       menu.appendChild(menuButton("Voltar ao deck", () => returnCardToOwnerDeck(cardId, playerKey, containerKey)));
       menu.appendChild(menuButton("Enviar ao descarte", () => moveCard(cardId, playerKey, containerKey, myRole, "discardPile")));
     }

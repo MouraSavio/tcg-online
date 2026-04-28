@@ -1029,6 +1029,11 @@ emitRoomState(roomId, room);
 
     card.faceDown = !!faceDown;
     emitRoomState(roomId, room);
+
+    // Se a carta foi desvirada (revelada), avisa os jogadores para tocarem a animação
+    if (!faceDown) {
+      io.to(roomId).emit("cardRevealed", { card: serializeCard(card) });
+    }
   });
   socket.on("shuffleDeck", ({ roomId, pileType }) => {
   const result = getRoomAndPlayer(roomId, socket.id);
