@@ -1645,7 +1645,7 @@ function animateCardTravel(payload) {
   const isCreatureCard = payload.card && (payload.card.type === "creature" || payload.card.type === "mythic");
 
   const isMagicZone = payload.toZone === "magic1" || payload.toZone === "magic2" || payload.toZone === "magic3" || payload.toZone === "magic4" || payload.toZone === "field";
-  const isMagicCard = payload.card && payload.card.type === "spell";
+  const isMagicCard = payload.card && (payload.card.type === "spell" || payload.card.type === "trap");
 
   const isBoardZone = ["mythic", "creature1", "creature2", "creature3", "field", "magic1", "magic2", "magic3", "magic4"].includes(payload.toZone);
 
@@ -1665,6 +1665,8 @@ function animateCardTravel(payload) {
 
   if (payload.kind === "draw" || payload.toZone === "hand") {
     audioManager.play("comprar");
+  } else if (payload.card && payload.card.faceDown) {
+    audioManager.play("cartaZona");
   } else if (isCreatureCard && isCreatureZone) {
     audioManager.play("criaturaInvocacao");
   } else if (isMagicCard && isMagicZone) {
@@ -2357,7 +2359,6 @@ menu.appendChild(menuButton("Embaralhar", () => shufflePile(playerKey, container
         }));
       }
 
-      menu.appendChild(menuButton("Adicionar à mão", () => moveCard(cardId, playerKey, containerKey, myRole, "hand")));
       if (containerKey !== "hand") {
         menu.appendChild(menuButton("Adicionar à mão", () => moveCard(cardId, playerKey, containerKey, myRole, "hand")));
       }
@@ -3254,6 +3255,20 @@ socket.on("selectedCardChanged", ({ role, cardId }) => {
   remoteSelections[role] = cardId || null;
   renderBoard();
 });
+
+socket.on("cardRevealed", ({ card }) => {
+  if (!card) return;
+
+  const hydratedCard = hydrateServerCard(card, card.ownerRole || "p1");
+  if (hydratedCard && hydratedCard.image) {
+    // Toca o som para o oponente, já que quem clicou já ouviu na função local
+    if (card.ownerRole !== myRole) {
+      audioManager.play("revelar");
+    }
+    showLargeEffectImage(hydratedCard.image);
+  }
+});
+
 socket.on("visualAction", (payload) => {
   animateCardTravel(payload);
 });
