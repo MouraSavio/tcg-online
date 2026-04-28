@@ -42,6 +42,11 @@
 
   <!-- TABULEIRO -->
   <div id="boardScreen" class="screen">
+    
+    <div id="opponentViewingAlert" class="opponent-viewing-alert" style="display: none;">
+      ⚠️ O Oponente está vasculhando o Deck!
+    </div>
+
     <svg id="attackLayer"></svg>
 
     <div class="board-zoom-controls">
@@ -58,14 +63,6 @@
           <div class="preview-side-panel">
             <div class="panel-title">Carta Selecionada</div>
             <div id="sidePreviewCard" class="side-preview-card" onclick="openFullPreviewFromSelection()"></div>
-          </div>
-
-          <div id="pileViewerPanel" class="pile-viewer-panel hidden">
-            <div class="pile-viewer-header">
-              <span id="pileViewerTitle"></span>
-              <button onclick="closePileViewer()">Fechar</button>
-            </div>
-            <div id="pileViewerCards" class="pile-viewer-grid"></div>
           </div>
         </div>
 
@@ -538,6 +535,54 @@
       <div class="game-over-buttons">
         <button onclick="requestRematch()" class="deck-action-btn deck-action-btn-primary">Nova Partida</button>
         <button onclick="requestReturnToDeckSelection()" class="deck-action-btn deck-action-btn-secondary">Trocar Decks</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL VIEWER DE PILHAS -->
+  <div id="pileViewerModal" class="modal" onclick="closePileViewerOnOverlay(event)">
+    <div class="modal-content pile-viewer-content">
+      <div class="pile-viewer-header">
+        <h2 id="pileViewerTitle">Deck</h2>
+        <button onclick="closePileViewer()">Fechar</button>
+      </div>
+      <div id="pileViewerCards" class="pile-viewer-grid"></div>
+    </div>
+  </div>
+
+  <!-- MODAL PRE-MATCH -->
+  <div id="preMatchModal" class="modal">
+    <div class="modal-content pre-match-content">
+      <div id="jokenpoSection">
+        <h2>Pedra, Papel ou Tesoura!</h2>
+        <div id="jokenpoStatus">Escolha sua jogada:</div>
+        
+        <div id="jokenpoAnimation" class="jokenpo-animation" style="display: none;">
+          <div class="jokenpo-player">
+            <span class="jokenpo-name">Você</span>
+            <div id="jokenpoMyChoice" class="jokenpo-choice">❓</div>
+          </div>
+          <div class="jokenpo-vs">VS</div>
+          <div class="jokenpo-player">
+            <span class="jokenpo-name">Oponente</span>
+            <div id="jokenpoOppChoice" class="jokenpo-choice">❓</div>
+          </div>
+        </div>
+
+        <div class="jokenpo-buttons" id="jokenpoButtons">
+          <button onclick="sendJokenpo('pedra')">🪨 Pedra</button>
+          <button onclick="sendJokenpo('papel')">📄 Papel</button>
+          <button onclick="sendJokenpo('tesoura')">✂️ Tesoura</button>
+        </div>
+      </div>
+
+      <div id="turnChoiceSection" style="display: none;">
+        <h2 id="turnChoiceTitle">Sua vez de decidir!</h2>
+        <div id="turnChoiceStatus">Quem deve jogar o primeiro turno?</div>
+        <div class="turn-buttons" id="turnButtons">
+          <button class="deck-action-btn deck-action-btn-primary" onclick="sendTurnPreference('first')">Quero ser o Primeiro</button>
+          <button class="deck-action-btn deck-action-btn-secondary" onclick="sendTurnPreference('second')">Quero ser o Segundo</button>
+        </div>
       </div>
     </div>
   </div>

@@ -881,8 +881,7 @@ input {
   font-weight: 700;
 }
 
-.preview-side-panel,
-.pile-viewer-panel {
+.preview-side-panel {
   padding: 12px;
   box-sizing: border-box;
 }
@@ -913,13 +912,11 @@ input {
   padding: 12px;
 }
 
-.pile-viewer-panel {
-  max-height: 42vh;
+.pile-viewer-content {
+  width: min(1100px, 94vw);
+  max-height: 86vh;
   overflow-y: auto;
-}
-
-.pile-viewer-panel.hidden {
-  display: none;
+  text-align: left;
 }
 
 .pile-viewer-header {
@@ -927,13 +924,19 @@ input {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pile-viewer-header h2 {
+  margin: 0;
+  color: #ffd166;
 }
 
 .pile-viewer-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  justify-content: center;
+  justify-content: flex-start;
   margin-top: 10px;
 }
 
@@ -1849,4 +1852,109 @@ input {
 .chat-message.other .chat-message-text {
   background: rgba(255, 255, 255, 0.10);
   color: #fff;
+}
+
+#pileViewerModal {
+  z-index: 3000;
+}
+
+.opponent-viewing-alert {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(220, 53, 69, 0.95);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 16px;
+  z-index: 4000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  animation: pulseAlert 2s infinite;
+  pointer-events: none;
+}
+
+@keyframes pulseAlert {
+  0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+/* =========================
+   PRE-MATCH / JOKENPO
+   ========================= */
+.pre-match-content {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.pre-match-content h2 {
+  color: #ffd166;
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+#jokenpoStatus, #turnChoiceStatus {
+  font-size: 16px;
+  margin-bottom: 24px;
+  color: #ddd;
+}
+
+.jokenpo-buttons, .turn-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.jokenpo-buttons button {
+  font-size: 18px;
+  padding: 14px 20px;
+  background: #37465e;
+  color: white;
+}
+
+.jokenpo-buttons button:hover {
+  background: #475a7a;
+  transform: translateY(-2px);
+}
+
+.jokenpo-animation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.jokenpo-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.jokenpo-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffd166;
+}
+
+.jokenpo-choice {
+  font-size: 64px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+
+.jokenpo-vs {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ff4d4d;
 }

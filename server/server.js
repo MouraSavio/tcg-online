@@ -374,13 +374,13 @@ function createPlayerZones(deckKey) {
   };
 }
 
-function createMatchState(room) {
+function createMatchState(room, firstTurn = "p1") {
   const p1DeckKey = room.deckSelections.p1;
   const p2DeckKey = room.deckSelections.p2;
 
   return {
     started: true,
-    currentTurn: "p1",
+    currentTurn: firstTurn,
     currentPhase: "IT",
     players: {
       p1: createPlayerZones(p1DeckKey),
@@ -574,8 +574,8 @@ function emitRoomProfiles(roomId, room) {
   });
 }
 
-function startRoomMatch(roomId, room) {
-  room.matchState = createMatchState(room);
+function startRoomMatch(roomId, room, firstTurn = "p1") {
+  room.matchState = createMatchState(room, firstTurn);
 
   const p1Decks = buildDeckState(room.deckSelections.p1, "p1");
   const p2Decks = buildDeckState(room.deckSelections.p2, "p2");
@@ -597,6 +597,16 @@ function startRoomMatch(roomId, room) {
   });
 }
 
+function startPreMatchSequence(roomId, room) {
+  if (room.lastLoser) {
+    room.preMatch = { phase: "choosingTurn", winner: room.lastLoser, choices: {} };
+    io.to(roomId).emit("startPreMatchDecision", { phase: "choosingTurn", decider: room.lastLoser });
+  } else {
+    room.preMatch = { phase: "jokenpo", choices: { p1: null, p2: null }, winner: null };
+    io.to(roomId).emit("startPreMatchDecision", { phase: "jokenpo" });
+  }
+}
+
 io.on("connection", (socket) => {
   console.log("Jogador conectado:", socket.id);
 
@@ -607,7 +617,10 @@ io.on("connection", (socket) => {
     deckSelections: {},
     ready: {},
     matchState: null,
-    chatMessages: []
+    chatMessages: [],
+    lastLoser: null,
+    preMatch: null,
+    rematchRequests: {}
   };
 }
 
@@ -728,14 +741,64 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("readyStatus", room.ready);
 
     if (room.ready.p1 && room.ready.p2) {
-      startRoomMatch(roomId, room);
+      startPreMatchSequence(roomId, room);
     }
+  });
+
+  socket.on("jokenpoChoice", ({ roomId, choice }) => {
+    const result = getRoomAndPlayer(roomId, socket.id);
+    if (!result) return;
+    const { room, player } = result;
+
+    if (!room.preMatch || room.preMatch.phase !== "jokenpo") return;
+
+    room.preMatch.choices[player.role] = choice;
+
+    if (room.preMatch.choices.p1 && room.preMatch.choices.p2) {
+      const c1 = room.preMatch.choices.p1;
+      const c2 = room.preMatch.choices.p2;
+      let winner = "tie";
+
+      if (c1 !== c2) {
+        if (
+          (c1 === "pedra" && c2 === "tesoura") ||
+          (c1 === "papel" && c2 === "pedra") ||
+          (c1 === "tesoura" && c2 === "papel")
+        ) {
+          winner = "p1";
+        } else {
+          winner = "p2";
+        }
+      }
+
+      io.to(roomId).emit("jokenpoResult", { p1Choice: c1, p2Choice: c2, winner });
+
+      if (winner === "tie") {
+        room.preMatch.choices = { p1: null, p2: null };
+      } else {
+        room.preMatch.phase = "choosingTurn";
+        room.preMatch.winner = winner;
+      }
+    }
+  });
+
+  socket.on("turnPreference", ({ roomId, firstTurnRole }) => {
+    const result = getRoomAndPlayer(roomId, socket.id);
+    if (!result) return;
+    const { room, player } = result;
+
+    if (!room.preMatch || room.preMatch.phase !== "choosingTurn") return;
+    if (room.preMatch.winner !== player.role) return;
+
+    startRoomMatch(roomId, room, firstTurnRole);
   });
 
   socket.on("surrenderMatch", ({ roomId }) => {
     const result = getRoomAndPlayer(roomId, socket.id);
     if (!result) return;
-    const { player } = result;
+    const { room, player } = result;
+
+    room.lastLoser = player.role;
 
     const winner = getOpponentRole(player.role);
     io.to(roomId).emit("matchEnded", {
@@ -748,10 +811,15 @@ io.on("connection", (socket) => {
   socket.on("requestRematch", ({ roomId }) => {
     const result = getRoomAndPlayer(roomId, socket.id);
     if (!result) return;
-    const { room } = result;
+    const { room, player } = result;
 
     if (!room.deckSelections.p1 || !room.deckSelections.p2) return;
-    startRoomMatch(roomId, room);
+
+    room.rematchRequests[player.role] = true;
+    if (room.rematchRequests.p1 && room.rematchRequests.p2) {
+      room.rematchRequests = {};
+      startPreMatchSequence(roomId, room);
+    }
   });
 
   socket.on("returnToDeckSelection", ({ roomId }) => {
@@ -761,6 +829,8 @@ io.on("connection", (socket) => {
 
     room.ready = {};
     room.matchState = null;
+    room.lastLoser = null;
+    room.rematchRequests = {};
 
     io.to(roomId).emit("goToDeckSelection");
     io.to(roomId).emit("readyStatus", room.ready);
@@ -784,6 +854,18 @@ io.on("connection", (socket) => {
     if (!playerState) return;
 
     emitPrivatePileView(socket, player.role, playerState, pileType);
+  });
+
+  socket.on("viewingDeckStatus", ({ roomId, isViewing }) => {
+    const result = getRoomAndPlayer(roomId, socket.id);
+    if (!result) return;
+    const { room, player } = result;
+
+    const opp = getOpponentRole(player.role);
+    const oppSocket = room.players.find((p) => p.role === opp)?.socketId;
+    if (oppSocket) {
+      io.to(oppSocket).emit("opponentViewingDeck", { isViewing });
+    }
   });
 
   socket.on("drawCard", ({ roomId, pileType }) => {
@@ -1262,6 +1344,11 @@ emitRoomState(roomId, room);
 
     for (const roomId in rooms) {
       const room = rooms[roomId];
+
+      const player = room.players.find((p) => p.socketId === socket.id);
+      if (player) {
+        socket.to(roomId).emit("opponentViewingDeck", { isViewing: false });
+      }
 
       room.players = room.players.filter((player) => player.socketId !== socket.id);
 

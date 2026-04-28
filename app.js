@@ -928,6 +928,8 @@ function updateDeckSelectionUI(deckSelections) {
 function startSynchronizedGame(decks, matchState) {
   const myDeck = decks[myRole];
 
+  document.getElementById("preMatchModal").style.display = "none";
+
   if (!myDeck) {
     alert("Seu deck não foi encontrado para iniciar a partida.");
     return;
@@ -953,6 +955,12 @@ function startSynchronizedGame(decks, matchState) {
   closeCardPreview();
   clearAttackArrow();
   closeGameOverModal();
+
+  const rematchBtn = document.querySelector("#gameOverModal .deck-action-btn-primary");
+  if (rematchBtn) {
+    rematchBtn.textContent = "Nova Partida";
+    rematchBtn.disabled = false;
+  }
 
   applyServerStateToUI();
   renderBoard();
@@ -2223,6 +2231,11 @@ function openZoneChoiceMenu(x, y, cardId, playerKey, containerKey) {
   renderContextMenu();
 }
 
+function openEmptyZoneChoiceMenu(x, y, cardId, playerKey, containerKey) {
+  state.openMenu = { type: "emptyZoneChoice", x, y, cardId, playerKey, containerKey };
+  renderContextMenu();
+}
+
 function renderContextMenu() {
   const menu = document.getElementById("contextMenu");
   if (!menu) return;
@@ -2263,63 +2276,49 @@ menu.appendChild(menuButton("Embaralhar", () => shufflePile(playerKey, container
     const { cardId, playerKey, containerKey, x, y } = state.openMenu;
 
     const card = findCardInContainer(playerKey, containerKey, cardId);
-    if (card && card.faceDown && playerKey === myRole) {
-      menu.appendChild(
-        menuButton("Visualizar (Privado)", () => openCardPreview(card, false))
-      );
+
+    const isInsideDeck = isDeckLikeZone(containerKey);
+    const isMine = playerKey === myRole;
+
+    if (isInsideDeck && isMine) {
+      menu.appendChild(menuButton("Virar / Revelar", () => toggleFaceDown(cardId, playerKey, containerKey)));
+      menu.appendChild(menuButton("Girar", () => toggleRotation(cardId, playerKey, containerKey)));
+      menu.appendChild(menuButton("Adicionar à mão", () => moveCard(cardId, playerKey, containerKey, myRole, "hand")));
+      menu.appendChild(menuButton("Enviar ao descarte", () => moveCard(cardId, playerKey, containerKey, myRole, "discardPile")));
+      menu.appendChild(menuButton("Adicionar à zona de campo", () => openEmptyZoneChoiceMenu(x, y, cardId, playerKey, containerKey)));
+    } else {
+      if (card && card.faceDown && playerKey === myRole) {
+        menu.appendChild(
+          menuButton("Visualizar (Privado)", () => openCardPreview(card, false))
+        );
+      }
+
+      if (canUseEffect(cardId, playerKey, containerKey)) {
+        menu.appendChild(menuButton("Efeito", () => triggerCardEffect(cardId)));
+      }
+
+      if (!PILE_CONTAINERS.includes(containerKey) && containerKey !== "hand") {
+        menu.appendChild(menuButton("Atacar", () => startAttack(cardId, playerKey, containerKey)));
+      }
+
+      menu.appendChild(menuButton("Virar / Revelar", () => toggleFaceDown(cardId, playerKey, containerKey)));
+      menu.appendChild(menuButton("Girar", () => toggleRotation(cardId, playerKey, containerKey)));
+
+      if (!PILE_CONTAINERS.includes(containerKey) && containerKey !== "hand") {
+        menu.appendChild(menuButton("Adicionar marcador", () => {
+          audioManager.play("clique");
+          changeCardMarkers(cardId, playerKey, containerKey, 1);
+        }));
+        menu.appendChild(menuButton("Remover marcador", () => {
+          audioManager.play("clique");
+          changeCardMarkers(cardId, playerKey, containerKey, -1);
+        }));
+      }
+
+      menu.appendChild(menuButton("Adicionar à mão", () => moveCard(cardId, playerKey, containerKey, myRole, "hand")));
+      menu.appendChild(menuButton("Voltar ao deck", () => returnCardToOwnerDeck(cardId, playerKey, containerKey)));
+      menu.appendChild(menuButton("Enviar ao descarte", () => moveCard(cardId, playerKey, containerKey, myRole, "discardPile")));
     }
-
-    // 1. efeito
-if (canUseEffect(cardId, playerKey, containerKey)) {
-  menu.appendChild(menuButton("Efeito", () => triggerCardEffect(cardId)));
-}
-
-// 2. atacar
-if (!PILE_CONTAINERS.includes(containerKey) && containerKey !== "hand") {
-  menu.appendChild(menuButton("Atacar", () => startAttack(cardId, playerKey, containerKey)));
-}
-
-// 3. virar / girar
-menu.appendChild(
-  menuButton("Virar / Revelar", () => toggleFaceDown(cardId, playerKey, containerKey))
-);
-
-menu.appendChild(
-  menuButton("Girar", () => toggleRotation(cardId, playerKey, containerKey))
-);
-if (!PILE_CONTAINERS.includes(containerKey) && containerKey !== "hand") {
-  menu.appendChild(
-    menuButton("Adicionar marcador", () => {
-      audioManager.play("clique");
-      changeCardMarkers(cardId, playerKey, containerKey, 1);
-    })
-  );
-
-  menu.appendChild(
-    menuButton("Remover marcador", () => {
-      audioManager.play("clique");
-      changeCardMarkers(cardId, playerKey, containerKey, -1);
-    })
-  );
-}
-// resto
-menu.appendChild(
-  menuButton("Adicionar à mão", () =>
-    moveCard(cardId, playerKey, containerKey, myRole, "hand")
-  )
-);
-
-menu.appendChild(
-  menuButton("Voltar ao deck", () =>
-    returnCardToOwnerDeck(cardId, playerKey, containerKey)
-  )
-);
-
-menu.appendChild(
-  menuButton("Enviar ao descarte", () =>
-    moveCard(cardId, playerKey, containerKey, myRole, "discardPile")
-  )
-);
   }
 
   if (state.openMenu.type === "zoneChoice") {
@@ -2335,6 +2334,34 @@ menu.appendChild(
         })
       );
     });
+  }
+
+  if (state.openMenu.type === "emptyZoneChoice") {
+    const { cardId, playerKey, containerKey } = state.openMenu;
+    const fieldZones = ["mythic", "creature1", "creature2", "creature3", "field", "magic1", "magic2", "magic3", "magic4"];
+    
+    let hasAny = false;
+
+    fieldZones.forEach((zone) => {
+      if (state.players[myRole][zone].length === 0) {
+        hasAny = true;
+        menu.appendChild(
+          menuButton(`Seu -> ${ZONE_LABELS[zone]}`, () => {
+            moveCard(cardId, playerKey, containerKey, myRole, zone);
+            closeContextMenu();
+          })
+        );
+      }
+    });
+
+    if (!hasAny) {
+      const emptyMsg = document.createElement("button");
+      emptyMsg.textContent = "Nenhuma zona vazia";
+      emptyMsg.disabled = true;
+      emptyMsg.style.color = "#888";
+      emptyMsg.style.cursor = "default";
+      menu.appendChild(emptyMsg);
+    }
   }
 
   menu.style.display = "block";
@@ -2363,10 +2390,11 @@ menu.appendChild(
 function menuButton(text, action) {
   const btn = document.createElement("button");
   btn.textContent = text;
-  btn.onclick = () => {
+  btn.onclick = (e) => {
+    e.stopPropagation();
     action();
 
-    if (state.openMenu?.type !== "zoneChoice") {
+    if (state.openMenu?.type !== "zoneChoice" && state.openMenu?.type !== "emptyZoneChoice") {
       closeContextMenu();
     }
   };
@@ -2416,6 +2444,7 @@ function openPileViewer(playerKey, containerKey) {
   renderPileViewerIfOpen();
 
   if (playerKey === myRole && isDeckLikeZone(containerKey)) {
+    socket.emit("viewingDeckStatus", { roomId, isViewing: true });
     socket.emit("requestPrivatePileView", {
       roomId,
       pileType: uiZoneToServerZone(containerKey)
@@ -2432,14 +2461,14 @@ function getCardsForPileViewer(playerKey, containerKey) {
 }
 
 function renderPileViewerIfOpen() {
-  const panel = document.getElementById("pileViewerPanel");
+  const modal = document.getElementById("pileViewerModal");
   const title = document.getElementById("pileViewerTitle");
   const grid = document.getElementById("pileViewerCards");
 
-  if (!panel || !title || !grid) return;
+  if (!modal || !title || !grid) return;
 
   if (!state.pileViewer) {
-    panel.classList.add("hidden");
+    modal.style.display = "none";
     grid.innerHTML = "";
     return;
   }
@@ -2454,13 +2483,13 @@ function renderPileViewerIfOpen() {
 
   if (loading && playerKey === myRole && isDeckLikeZone(containerKey) && pile.length === 0) {
     grid.innerHTML = '<div class="side-preview-empty">Carregando pilha...</div>';
-    panel.classList.remove("hidden");
+    modal.style.display = "block";
     return;
   }
 
   if (pile.length === 0) {
     grid.innerHTML = '<div class="side-preview-empty">Nenhuma carta para mostrar</div>';
-    panel.classList.remove("hidden");
+    modal.style.display = "block";
     return;
   }
 
@@ -2476,13 +2505,23 @@ function renderPileViewerIfOpen() {
     );
   });
 
-  panel.classList.remove("hidden");
+  modal.style.display = "block";
   scheduleBoardAutoScale();
 }
 
 function closePileViewer() {
+  if (state.pileViewer && isDeckLikeZone(state.pileViewer.containerKey) && state.pileViewer.playerKey === myRole) {
+    socket.emit("viewingDeckStatus", { roomId, isViewing: false });
+  }
+
   state.pileViewer = null;
   renderPileViewerIfOpen();
+}
+
+function closePileViewerOnOverlay(event) {
+  if (event.target.id === "pileViewerModal") {
+    closePileViewer();
+  }
 }
 
 function refreshOpenPrivatePileIfNeeded() {
@@ -2937,6 +2976,11 @@ function surrenderMatch() {
 
 function requestRematch() {
   socket.emit("requestRematch", { roomId });
+  const btn = document.querySelector("#gameOverModal .deck-action-btn-primary");
+  if (btn) {
+    btn.textContent = "Aguardando oponente...";
+    btn.disabled = true;
+  }
 }
 
 function requestReturnToDeckSelection() {
@@ -2986,6 +3030,79 @@ socket.on("deckSelectionsUpdated", (deckSelections) => {
   updateDeckSelectionUI(deckSelections);
 });
 
+let myJokenpoChoice = null;
+
+function getJokenpoEmoji(choice) {
+  if (choice === 'pedra') return '🪨';
+  if (choice === 'papel') return '📄';
+  if (choice === 'tesoura') return '✂️';
+  return '❓';
+}
+
+socket.on("startPreMatchDecision", (data) => {
+  showScreen("boardScreen"); 
+  const modal = document.getElementById("preMatchModal");
+  modal.style.display = "block";
+  document.getElementById("jokenpoSection").style.display = data.phase === 'jokenpo' ? "block" : "none";
+  document.getElementById("turnChoiceSection").style.display = data.phase === 'choosingTurn' ? "block" : "none";
+
+  if (data.phase === 'jokenpo') {
+    document.getElementById("jokenpoStatus").textContent = "Escolha sua jogada:";
+    document.getElementById("jokenpoButtons").style.display = "flex";
+    document.getElementById("jokenpoAnimation").style.display = "none";
+    myJokenpoChoice = null;
+  } else if (data.phase === 'choosingTurn') {
+    setupTurnChoice(data.decider);
+  }
+});
+
+window.sendJokenpo = function(choice) {
+  myJokenpoChoice = choice;
+  document.getElementById("jokenpoButtons").style.display = "none";
+  document.getElementById("jokenpoStatus").textContent = "Aguardando oponente...";
+  socket.emit("jokenpoChoice", { roomId, choice });
+};
+
+socket.on("jokenpoResult", (data) => {
+  audioManager.play("revelar");
+  document.getElementById("jokenpoAnimation").style.display = "flex";
+  document.getElementById("jokenpoMyChoice").textContent = getJokenpoEmoji(myRole === 'p1' ? data.p1Choice : data.p2Choice);
+  document.getElementById("jokenpoOppChoice").textContent = getJokenpoEmoji(myRole === 'p1' ? data.p2Choice : data.p1Choice);
+
+  setTimeout(() => {
+    if (data.winner === 'tie') {
+      document.getElementById("jokenpoStatus").textContent = "Empate! Joguem de novo.";
+      setTimeout(() => {
+        document.getElementById("jokenpoAnimation").style.display = "none";
+        document.getElementById("jokenpoButtons").style.display = "flex";
+        document.getElementById("jokenpoStatus").textContent = "Escolha sua jogada:";
+      }, 2000);
+    } else {
+      const amIWinner = data.winner === myRole;
+      document.getElementById("jokenpoStatus").textContent = amIWinner ? "Você venceu!" : "Você perdeu!";
+      setTimeout(() => {
+        document.getElementById("jokenpoSection").style.display = "none";
+        document.getElementById("turnChoiceSection").style.display = "block";
+        setupTurnChoice(data.winner);
+      }, 2000);
+    }
+  }, 1200);
+});
+
+function setupTurnChoice(deciderRole) {
+  const amIDecider = deciderRole === myRole;
+  document.getElementById("turnChoiceTitle").textContent = amIDecider ? "Sua vez de decidir!" : "Aguardando oponente...";
+  document.getElementById("turnChoiceStatus").textContent = amIDecider ? "Quem deve jogar o primeiro turno?" : "Oponente está escolhendo o turno...";
+  document.getElementById("turnButtons").style.display = amIDecider ? "flex" : "none";
+}
+
+window.sendTurnPreference = function(order) {
+  const firstTurnRole = order === 'first' ? myRole : getOpponentRole(myRole);
+  document.getElementById("turnButtons").style.display = "none";
+  document.getElementById("turnChoiceStatus").textContent = "Iniciando partida...";
+  socket.emit("turnPreference", { roomId, firstTurnRole });
+};
+
 socket.on("playersProfileUpdated", (profiles) => {
   if (!profiles) return;
 
@@ -3001,6 +3118,18 @@ socket.on("playersProfileUpdated", (profiles) => {
 
   updateChatPerspectiveProfile();
   renderChatMessages();
+});
+
+socket.on("opponentViewingDeck", ({ isViewing }) => {
+  const alertEl = document.getElementById("opponentViewingAlert");
+  if (!alertEl) return;
+
+  if (isViewing) {
+    audioManager.play("revelar");
+    alertEl.style.display = "block";
+  } else {
+    alertEl.style.display = "none";
+  }
 });
 
 socket.on("testActionReceived", (data) => {
@@ -3201,6 +3330,7 @@ window.zoomOutBoard = zoomOutBoard;
 window.resetBoardZoom = resetBoardZoom;
 window.openFullPreviewFromSelection = openFullPreviewFromSelection;
 window.closePileViewer = closePileViewer;
+window.closePileViewerOnOverlay = closePileViewerOnOverlay;
 window.rollDice = rollDice;
 window.flipCoin = flipCoin;
 window.changeMythicHP = changeMythicHP;
