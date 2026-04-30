@@ -1524,14 +1524,6 @@ function applyTurnGain(player, inputId = null) {
   });
 }
 
-function animateResultBox(elementId, animClass = "animating") {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-
-  el.classList.remove("animating", "animating-coin", "animating-dice");
-  void el.offsetWidth;
-  el.classList.add(animClass);
-}
 function serializeAnimationCard(card) {
   if (!card) return null;
 
@@ -1849,10 +1841,12 @@ function animateAttackFromPayload(payload) {
   animateAttackArrow(sourceEl, targetEl);
 }
 function rollDice() {
+  audioManager.play("clique");
   socket.emit("rollDice", { roomId });
 }
 
 function flipCoin() {
+  audioManager.play("clique");
   socket.emit("flipCoin", { roomId });
 }
 
@@ -3437,28 +3431,64 @@ socket.on("privatePileViewData", ({ playerKey, pileType, cards }) => {
 });
 
 socket.on("diceRolled", ({ value }) => {
-  animateResultBox("diceResult", "animating-dice");
+  const diceImg = document.getElementById("diceResultImg");
+  const textEl = document.getElementById("diceResultText");
+
+  if (textEl) {
+    textEl.textContent = "Rolando...";
+    textEl.classList.remove("result-text-pop");
+  }
+
+  requestAnimationFrame(() => {
+    if (diceImg) {
+      diceImg.style.animation = 'none';
+      void diceImg.offsetWidth; // Reflow para reiniciar animação
+      diceImg.classList.add("animating-dice");
+      audioManager.play("efeito");
+    }
+  });
 
   setTimeout(() => {
-    const textEl = document.getElementById("diceResultText");
-    const imgEl = document.getElementById("diceResultImg");
-    if (textEl) textEl.textContent = value;
-    if (imgEl) imgEl.style.display = "block";
-  }, 400); // Exibe o resultado exatamente no meio da animação de giro
+    if (textEl) {
+      textEl.textContent = value;
+      textEl.classList.add("result-text-pop");
+    }
+    if (diceImg) {
+      diceImg.classList.remove("animating-dice");
+    }
+  }, 1100); 
 });
 
 socket.on("coinFlipped", ({ value }) => {
-  animateResultBox("coinResult", "animating-coin");
+  const coin3D = document.getElementById("coin3D");
+  const textEl = document.getElementById("coinResultText");
+
+  if (textEl) {
+    textEl.textContent = "Girando...";
+    textEl.classList.remove("result-text-pop");
+  }
+
+  requestAnimationFrame(() => {
+    if (coin3D) {
+      coin3D.style.animation = 'none';
+      void coin3D.offsetWidth; // Reflow
+      
+      const isHeads = value === "Cara";
+      const animClass = isHeads ? "animating-coin-heads" : "animating-coin-tails";
+      
+      coin3D.classList.remove("animating-coin-heads", "animating-coin-tails");
+      coin3D.classList.add(animClass);
+      audioManager.play("efeito");
+    }
+  });
 
   setTimeout(() => {
-    const textEl = document.getElementById("coinResultText");
-    const imgEl = document.getElementById("coinResultImg");
-    if (textEl) textEl.textContent = value;
-    if (imgEl) {
-      imgEl.src = value === "Cara" ? "assets/ui/coins/coin-heads.png" : "assets/ui/coins/coin-tails.png";
-      imgEl.style.display = "block";
+    if (textEl) {
+      textEl.textContent = value;
+      textEl.classList.add("result-text-pop");
     }
-  }, 400); // Exibe o resultado exatamente no meio da animação de giro
+  }, 1300);
+
 });
 
 socket.on("handUpdated", () => {

@@ -127,8 +127,10 @@
               </button>
               <div id="diceResult" class="result-box compact-result-box">
                 <div class="result-box-content">
-                  <img id="diceResultImg" src="assets/ui/dice/dice-icon.png" class="tool-icon" style="display: none;">
-                  <span id="diceResultText">Dado: -</span>
+                  <div class="animation-icon-wrapper">
+                    <img id="diceResultImg" src="assets/ui/dice/dice-icon.png" class="tool-icon dice-3d">
+                  </div>
+                  <span id="diceResultText" class="result-text">Dado: -</span>
                 </div>
               </div>
 
@@ -137,8 +139,13 @@
               </button>
               <div id="coinResult" class="result-box compact-result-box">
                 <div class="result-box-content">
-                  <img id="coinResultImg" src="assets/ui/coins/coin-heads.png" class="tool-icon" style="display: none;">
-                  <span id="coinResultText">Moeda: -</span>
+                  <div class="animation-icon-wrapper">
+                    <div class="coin-3d" id="coin3D">
+                      <img class="coin-face coin-front" src="assets/ui/coins/coin-heads.png" alt="Cara">
+                      <img class="coin-face coin-back" src="assets/ui/coins/coin-tails.png" alt="Coroa">
+                    </div>
+                  </div>
+                  <span id="coinResultText" class="result-text">Moeda: -</span>
                 </div>
               </div>
             </div>
