@@ -250,228 +250,132 @@
   <!-- MODAL REGRAS -->
   <div id="rulesModal" class="modal" onclick="closeRulesOnOverlay(event)">
     <div class="modal-content rules-content">
-      <h2>Regras do Jogo</h2>
+      <h2>Livro de Regras Oficiais: [Nome do Jogo]</h2>
 
       <h3>1. Visão Geral</h3>
-      <p>
-        Este é um jogo de cartas estratégico para dois jogadores. Cada jogador controla uma Fera Mítica e um conjunto de criaturas, utilizando Pontos de Ação (PA) para invocar unidades, ativar magias e dominar o campo de batalha.
-      </p>
-      <p>
-        Uma partida dura, em média, entre 8 e 12 turnos.
-      </p>
+      <p>Este é um jogo de cartas estratégico para dois jogadores. Cada competidor assume o papel de um mestre de feras, controlando uma Fera Mítica e um exército de criaturas. Utilizando Pontos de Ação (PA), os jogadores devem invocar unidades, conjurar magias e traçar táticas para dominar o campo de batalha.</p>
 
       <h3>2. Condições de Vitória</h3>
+      <p>Um jogador vence a partida imediatamente ao cumprir uma das seguintes condições:</p>
       <ul>
-        <li><strong>Regicida:</strong> reduzir o HP da Fera Mítica do oponente a 0.</li>
-        <li><strong>Deckout:</strong> se o oponente precisar comprar uma carta do Deck Principal e não possuir cartas, ele perde a partida.</li>
+        <li><strong>Regicida:</strong> Reduzir os Pontos de Vida (HP) da Fera Mítica do oponente a 0.</li>
+        <li><strong>Deckout:</strong> Se um jogador for instruído a comprar uma carta do Deck Principal e não possuir cartas restantes, ele perde a partida.</li>
       </ul>
 
       <h3>3. Preparação do Jogo</h3>
+      <p>Para iniciar uma partida, cada jogador deve possuir:</p>
       <ul>
-        <li>Utilize um Deck Principal com exatamente 30 cartas.</li>
-        <li>O Deck Principal deve conter no mínimo 10 criaturas.</li>
-        <li>O Deck Principal deve conter pelo menos 3 criaturas de Nível 3.</li>
-        <li>Escolha 1 Fera Mítica fora do deck.</li>
-        <li>Inclua exatamente 1 Carta de Campo no Deck Principal.</li>
-        <li>Utilize um Deck de Armadilhas com exatamente 10 cartas.</li>
-        <li>O Deck de Armadilhas pode conter até 3 cópias da mesma carta.</li>
+        <li><strong>Deck Principal:</strong> Exatamente 30 cartas (contendo, no mínimo, 10 Criaturas e exatamente 1 Carta de Campo).</li>
+        <li><strong>Deck de Armadilhas:</strong> Exatamente 10 cartas (limite de 2 cópias por nome de carta).</li>
+        <li><strong>Fera Mítica:</strong> 1 carta escolhida previamente, que permanece fora dos decks e inicia o jogo em sua zona específica.</li>
       </ul>
 
       <h3>4. Início da Partida</h3>
-      <ul>
-        <li>Embaralhe o Deck Principal e o Deck de Armadilhas.</li>
-        <li>Cada jogador compra 1 carta do Deck Principal.</li>
-        <li>Coloque a Fera Mítica na zona correspondente.</li>
-        <li>Defina quem começa.</li>
-        <li>Criaturas podem atacar no turno em que entram em campo.</li>
-      </ul>
+      <ol>
+        <li>Ambos os jogadores embaralham seus respectivos Decks Principais e de Armadilhas.</li>
+        <li>A Fera Mítica é posicionada na Zona da Fera Mítica.</li>
+        <li>O jogador que inicia a partida é definido por um método aleatório (par ou ímpar, dado ou pedra-papel-tesoura).</li>
+        <li>Em regra, criaturas podem atacar no mesmo turno em que entram em campo.</li>
+      </ol>
 
       <h3>5. Estrutura do Campo</h3>
+      <p>O campo de cada jogador é composto pelas seguintes zonas:</p>
       <ul>
-        <li>1 Zona da Fera Mítica</li>
-        <li>3 Zonas de Criaturas</li>
-        <li>4 Zonas de Magias/Armadilhas</li>
-        <li>1 Zona de Campo</li>
-        <li>1 Deck Principal</li>
-        <li>1 Zona de Deck de Armadilhas</li>
-        <li>1 Pilha de Descarte</li>
+        <li><strong>1 Zona da Fera Mítica:</strong> Local fixo do comandante.</li>
+        <li><strong>3 Zonas de Criaturas:</strong> Espaço para unidades de combate.</li>
+        <li><strong>4 Zonas de Magias/Armadilhas:</strong> Para ativação e suporte.</li>
+        <li><strong>1 Zona de Campo:</strong> Espaço exclusivo para a Carta de Campo.</li>
+        <li><strong>Zonas de Decks:</strong> Espaços para o Deck Principal e Deck de Armadilhas.</li>
+        <li><strong>Pilha de Descarte:</strong> Onde cartas destruídas ou utilizadas são colocadas.</li>
       </ul>
 
       <h3>6. Pontos de Ação (PA)</h3>
+      <p>O PA é o recurso fundamental para realizar jogadas.</p>
       <ul>
-        <li>PA é o recurso principal do jogo.</li>
-        <li>É usado para invocar criaturas, ativar magias e pagar custos de efeitos.</li>
-        <li>Cada jogador recebe +3 PA no início de cada turno.</li>
-        <li>O máximo acumulado é 12 PA.</li>
+        <li><strong>Recuperação:</strong> No início de cada turno, o jogador ativo recebe +3 PA.</li>
+        <li><strong>Acúmulo:</strong> Pontos não utilizados permanecem na reserva, até o limite máximo de 12 PA.</li>
+        <li><strong>Uso:</strong> O PA é gasto para invocar criaturas, ativar magias e utilizar habilidades específicas.</li>
       </ul>
 
-      <h3>7. Criaturas</h3>
-      <p>Cada criatura possui:</p>
+      <h3>7. Criaturas e Posições de Batalha</h3>
+      <p>Cada criatura possui Nível (1 a 3), ATK, DEF e HP. Elas podem ser colocadas em duas posições:</p>
       <ul>
-        <li>Nível (1 a 3)</li>
-        <li>ATK</li>
-        <li>DEF</li>
-        <li>HP</li>
-        <li>Ataque do turno</li>
-        <li>Efeitos, quando houver</li>
+        <li><strong>Modo de Ataque (Horizontal):</strong> A criatura pode declarar ataques. Se sofrer dano, este é subtraído diretamente de seu HP.</li>
+        <li><strong>Modo de Defesa (Vertical):</strong> A criatura não pode atacar. Sua DEF atua como redutor de dano.</li>
+        <li><strong>Mudança de Posição:</strong> Cada criatura pode mudar sua posição de batalha uma vez por turno, durante uma das Fases Principais.</li>
       </ul>
 
-      <h3>8. Posição de Batalha</h3>
-      <p><strong>Modo de Ataque (horizontal):</strong></p>
-      <ul>
-        <li>Pode atacar.</li>
-        <li>Recebe dano diretamente no HP.</li>
-      </ul>
-      <p><strong>Modo de Defesa (vertical):</strong></p>
-      <ul>
-        <li>Não pode atacar.</li>
-        <li>A DEF reduz o dano recebido.</li>
-      </ul>
-      <p>Cada criatura pode mudar de posição uma vez por turno.</p>
-
-      <h3>9. Sistema de Combate</h3>
-      <ul>
-        <li>Na Fase de Batalha, o jogador declara um ataque e escolhe um alvo válido.</li>
-        <li>Contra criaturas em modo de ataque, o ATK do atacante é aplicado diretamente ao HP da criatura alvo.</li>
-        <li>Contra criaturas em modo de defesa, se o ATK do atacante for maior que a DEF do alvo, o dano causado é igual à diferença entre esses valores.</li>
-        <li>Se o ATK não superar a DEF, nenhum dano é causado.</li>
-        <li>Quando o HP de uma criatura chega a 0, ela é destruída e enviada à Pilha de Descarte.</li>
-      </ul>
-
-      <h3>10. Deck de Armadilhas</h3>
-      <ul>
-        <li>É um deck separado com exatamente 10 cartas.</li>
-        <li>Não pode ser comprado normalmente.</li>
-        <li>Não faz parte do Deck Principal.</li>
-        <li>Pode conter até 3 cópias da mesma carta.</li>
-        <li>Se uma armadilha retornar ao deck por efeito, ela retorna ao Deck de Armadilhas.</li>
-        <li>Armadilhas só podem ser obtidas uma vez por turno, quando você destruir uma criatura inimiga em batalha, ou por efeitos de cartas.</li>
-        <li>As armadilhas obtidas são adicionadas à mão.</li>
-      </ul>
-
-      <h3>11. Fera Mítica</h3>
-      <ul>
-        <li>Possui 500 HP.</li>
-        <li>Possui 100 DEF.</li>
-        <li>É tratada como criatura especial e possui zona própria.</li>
-        <li>Não é afetada por efeitos de cartas, exceto quando o efeito mencionar especificamente a Fera Mítica.</li>
-        <li>Não pode ser atacada enquanto seu controlador possuir outras criaturas em campo.</li>
-        <li>Enquanto seu controlador possuir outras criaturas em campo, não pode ser alvo de condições negativas.</li>
-      </ul>
-      <p><strong>Quando estiver desprotegida:</strong></p>
-      <ul>
-        <li>Pode ser atacada.</li>
-        <li>O ATK do atacante deve ser maior que a DEF da Fera Mítica para causar dano.</li>
-        <li>O dano causado é igual à diferença entre o ATK do atacante e a DEF da Fera Mítica.</li>
-      </ul>
-      <p><strong>Dano passivo:</strong></p>
-      <ul>
-        <li>Se uma criatura de Nível 1 sua for destruída por batalha ou efeito do oponente, sua Fera Mítica sofre 25 de dano.</li>
-        <li>Se for Nível 2, sofre 50 de dano.</li>
-        <li>Se for Nível 3, sofre 100 de dano.</li>
-      </ul>
-      <p><strong>Habilidades:</strong></p>
-      <ul>
-        <li>No seu primeiro turno, você pode pagar 1 PA para adicionar 1 criatura de Nível 1 do seu Deck à sua mão.</li>
-        <li>A Fera Mítica pode atacar gratuitamente se houver uma Carta de Campo ativa.</li>
-        <li>Sem Campo ativo, atacar com a Fera Mítica custa 3 PA.</li>
-        <li>Você pode pagar 3 PA para ativar diretamente a Carta de Campo do seu Deck.</li>
-      </ul>
-      <p>A Fera Mítica pode ser afetada por condições negativas e é imune às condições do seu próprio elemento.</p>
-
-      <h3>12. Magias</h3>
-      <ul>
-        <li>Existem Magias Normais e Magias Contínuas.</li>
-        <li>Possuem efeitos imediatos, como destruição, compra de cartas, manipulação de PA e recuperação de recursos.</li>
-        <li>Para ativar uma Magia, é necessário possuir uma Zona de Magia/Armadilha livre.</li>
-        <li>A carta é colocada com a face para cima nessa zona e seu efeito é resolvido imediatamente.</li>
-        <li>Se não for Contínua, é enviada à Pilha de Descarte após a resolução.</li>
-        <li>Se for Contínua, permanece em campo até ser removida.</li>
-        <li>Magias só podem ser ativadas no turno do jogador, salvo indicação em contrário.</li>
-      </ul>
-
-      <h3>13. Armadilhas</h3>
-      <ul>
-        <li>Existem Armadilhas Normais e Armadilhas Contínuas.</li>
-        <li>São cartas reativas colocadas viradas para baixo.</li>
-        <li>Devem ser colocadas da mão em uma Zona de Magia/Armadilha viradas para baixo.</li>
-        <li>Só podem ser ativadas no turno do oponente, salvo indicação em contrário.</li>
-        <li>Devem permanecer no campo por 1 turno completo antes de poderem ser ativadas.</li>
-        <li>Se não forem Contínuas, vão para a Pilha de Descarte após a ativação.</li>
-        <li>Se forem Contínuas, permanecem em campo até serem removidas.</li>
-      </ul>
-
-      <h3>14. Carta de Campo</h3>
-      <ul>
-        <li>Cada jogador possui exatamente 1 Carta de Campo no Deck Principal.</li>
-        <li>Ela permanece ativa na Zona de Campo.</li>
-        <li>Cada jogador pode controlar apenas 1 Campo.</li>
-      </ul>
-      <p><strong>Geração de PA:</strong></p>
-      <ul>
-        <li>No turno de ativação: +1 PA</li>
-        <li>No turno seguinte: +2 PA</li>
-        <li>A partir do terceiro turno: +3 PA</li>
-      </ul>
-      <p>Esse bônus é somado ao ganho base de PA.</p>
-      <ul>
-        <li>A Fera Mítica pode atacar gratuitamente enquanto houver Campo ativo.</li>
-        <li>Sem Campo ativo, atacar com a Fera Mítica custa 3 PA.</li>
-      </ul>
-
-      <h3>15. Sistema de Invocação</h3>
-      <ul>
-        <li>Criatura de Nível 1 custa 1 PA.</li>
-        <li>Criatura de Nível 2 custa 2 PA.</li>
-        <li>Criatura de Nível 3 custa 3 PA.</li>
-      </ul>
-
-      <h3>16. Sacrifício</h3>
-      <ul>
-        <li>Você pode sacrificar criaturas para reduzir o custo de invocação.</li>
-        <li>A criatura sacrificada deve estar em campo há pelo menos 1 turno.</li>
-        <li>O valor do sacrifício é igual ao nível da criatura.</li>
-      </ul>
-
-      <h3>17. Estrutura do Turno</h3>
+      <h3>8. Sistema de Combate</h3>
+      <p>Durante a Fase de Batalha, o atacante declara um alvo. O cálculo de dano segue estas regras:</p>
       <ol>
-        <li>Início — ganha +3 PA</li>
-        <li>Compra — compra 1 carta</li>
-        <li>Fase Principal 1</li>
-        <li>Fase de Batalha</li>
-        <li>Fase Principal 2</li>
-        <li>Fase Final</li>
+        <li><strong>Contra Alvo em Ataque:</strong> O ATK do atacante é reduzido do HP do alvo.</li>
+        <li><strong>Contra Alvo em Defesa:</strong> Subtrai-se a DEF do alvo do ATK do atacante. O remanescente é causado como dano ao HP do alvo. Se o ATK for menor ou igual à DEF, nenhum dano é causado.</li>
+        <li><strong>Destruição:</strong> Quando o HP de uma criatura chega a 0, ela é enviada à Pilha de Descarte.</li>
       </ol>
-      <p>Limite de 5 cartas na mão. Descarte o excedente.</p>
 
-      <h3>18. Condições Negativas</h3>
+      <h3>9. Deck de Armadilhas</h3>
+      <p>As Armadilhas são recursos especiais que não são comprados no Deck Principal.</p>
       <ul>
-        <li>Cada criatura pode possuir apenas 1 condição negativa por vez.</li>
-        <li>O dano progressivo é 20 → 40 → 80 → dobra a cada turno.</li>
-        <li>Se uma criatura com condição negativa for enviada da Zona de Criaturas para a Pilha de Descarte, a Fera Mítica do controlador sofre 25 de dano.</li>
-        <li>Isso não se aplica a efeitos que retornem a carta à mão ou ao Deck.</li>
-      </ul>
-      <p><strong>Tipos de condição:</strong></p>
-      <ul>
-        <li><strong>Queimadura (Fogo):</strong> ataques contra a criatura ignoram metade da DEF.</li>
-        <li><strong>Veneno (Terra):</strong> ATK reduzido pela metade.</li>
-        <li><strong>Resfriamento (Água):</strong> ao atacar, jogue uma moeda; cara ataca, coroa falha.</li>
-        <li><strong>Turbulência (Ar):</strong> efeitos negados; não pode mudar posição nem ser sacrificada.</li>
+        <li><strong>Aquisição:</strong> Você adiciona uma carta do Deck de Armadilhas à mão sempre que destruir uma criatura inimiga em batalha, ou via efeitos de cartas. (Limite de 1 obtenção por turno por destruição).</li>
+        <li><strong>Retorno:</strong> Se um efeito devolver uma Armadilha ao deck, ela deve retornar ao Deck de Armadilhas.</li>
       </ul>
 
-      <h3>19. Instinto Primordial</h3>
-      <p><strong>Condição de ativação:</strong></p>
+      <h3>10. A Fera Mítica</h3>
+      <p>A peça central do seu exército possui 500 HP e 100 DEF.</p>
       <ul>
-        <li>Quando a Fera Mítica estiver com metade ou menos do HP.</li>
-        <li>Só pode ser ativado no início do turno.</li>
-        <li>Apenas uma vez por duelo.</li>
+        <li><strong>Salvaguarda:</strong> A Fera Mítica não pode ser alvo de ataques ou condições negativas enquanto você controlar pelo menos uma criatura.</li>
+        <li><strong>Dano Passivo:</strong> Sempre que uma criatura sua é destruída em batalha, sua Fera Mítica sofre dano direto baseado no nível da unidade perdida:
+          <ul>
+            <li>Nível 1: 25 de dano.</li>
+            <li>Nível 2: 50 de dano.</li>
+            <li>Nível 3: 100 de dano.</li>
+          </ul>
+        </li>
+        <li><strong>Combate Direto:</strong> Quando desprotegida (sem criaturas em campo), a Fera Mítica pode ser atacada. O dano causado é o ATK do atacante menos a DEF da Fera.</li>
+        <li><strong>Habilidades de Fera:</strong>
+          <ul>
+            <li><strong>Chamado Urgente:</strong> Se não controlar criaturas, pague 1 PA para buscar uma criatura Nível 1 no Deck e adicionar à mão.</li>
+            <li><strong>Ativação de Campo:</strong> Pague 3 PA para colocar sua Carta de Campo do Deck diretamente em jogo.</li>
+            <li><strong>Ataque de Fera:</strong> Atacar com a Fera custa 3 PA. Se houver um Campo ativo, o custo é reduzido para 0.</li>
+          </ul>
+        </li>
       </ul>
-      <p><strong>Efeitos:</strong></p>
+
+      <h3>11. Magias e Armadilhas</h3>
       <ul>
-        <li>Compre cartas até possuir 5 cartas na mão.</li>
-        <li>Dobre o ganho base de PA naquele turno.</li>
+        <li><strong>Magias:</strong> Ativadas da mão durante o seu turno. Podem ser Normais (descartadas após o uso), Contínuas (ficam no campo) ou Equipamentos (ligadas a uma criatura). Se a criatura equipada sair do campo, o Equipamento é descartado.</li>
+        <li><strong>Armadilhas:</strong> Devem ser baixadas (face para baixo) em uma zona livre. Devem aguardar um turno completo antes da ativação e só podem ser ativadas no turno do oponente (salvo exceções).</li>
       </ul>
-      <p>Apenas o ganho base de PA é duplicado. Bônus adicionais, como os da Carta de Campo, não são duplicados.</p>
+
+      <h3>12. Carta de Campo e Geração de PA</h3>
+      <p>A Carta de Campo é um suporte vital que garante recursos extras.</p>
+      <ul>
+        <li><strong>Geração de PA Extra:</strong> Se você controlar uma criatura do elemento exigido pela carta, você gera PA adicional por turno baseado na longevidade do campo:
+          <ul>
+            <li>Turno de ativação: +1 PA.</li>
+            <li>Segundo turno ativa: +2 PA.</li>
+            <li>Terceiro turno em diante: +3 PA.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3>13. Invocação e Sacrifício</h3>
+      <ul>
+        <li><strong>Custos de Invocação:</strong> Nível 1 = 1 PA | Nível 2 = 2 PA | Nível 3 = 3 PA.</li>
+        <li><strong>Mecânica de Sacrifício:</strong> Você pode enviar uma criatura que está no campo há pelo menos 1 turno para a Pilha de Descarte para reduzir o custo de uma nova invocação. O desconto é igual ao Nível da criatura sacrificada.</li>
+      </ul>
+
+      <h3>14. Estrutura do Turno</h3>
+      <p>O turno segue obrigatoriamente esta ordem:</p>
+      <ol>
+        <li><strong>Fase de Início:</strong> Recebimento de +3 PA e bônus de campo.</li>
+        <li><strong>Fase de Compra:</strong> Comprar 1 carta do Deck Principal.</li>
+        <li><strong>Fase Principal 1:</strong> Invocação, ativação de magias e troca de posições.</li>
+        <li><strong>Fase de Batalha:</strong> Declaração de ataques.</li>
+        <li><strong>Fase Principal 2:</strong> Ações restantes (mesmas da Fase 1).</li>
+        <li><strong>Fase Final:</strong> Resolução de efeitos de fim de turno. Se possuir mais de 5 cartas na mão, descarte até atingir o limite.</li>
+        <li><strong>Passagem de Turno.</strong></li>
+      </ol>
 
       <button onclick="closeRules()">Fechar</button>
     </div>

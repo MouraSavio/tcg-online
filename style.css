@@ -400,8 +400,9 @@ input {
 }
 
 #previewCardArea {
-  width: min(520px, 85vw);
-  height: min(760px, 90vh);
+  width: min(520px, 90vw);
+  aspect-ratio: 63 / 88;
+  height: auto;
 }
 
 .deck-preview-content {
@@ -905,7 +906,8 @@ input {
 .side-preview-card {
   width: 100%;
   max-width: 320px;
-  height: 460px;
+  height: auto;
+  aspect-ratio: 63 / 88;
   margin: 0 auto;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.04);
@@ -1293,7 +1295,7 @@ input {
 }
 
 .card-image {
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
