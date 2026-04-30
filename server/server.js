@@ -316,21 +316,13 @@ function makeServerCard(name, type, deckKey, ownerRole) {
     ownerRole,
     faceDown: false,
     rotated: false,
-    markers: 0
+    markers: 0,
+    status: { atk: '', def: '', hp: '' }
   };
 }
 
 function serializeCards(cards) {
-  return (cards || []).map((card) => ({
-    id: card.id,
-    name: card.name,
-    type: card.type,
-    deckKey: card.deckKey,
-    ownerRole: card.ownerRole,
-    faceDown: !!card.faceDown,
-    rotated: !!card.rotated,
-    markers: Number(card.markers || 0)
-  }));
+  return (cards || []).map((card) => serializeCard(card));
 }
 function serializeCard(card) {
   if (!card) return null;
@@ -343,7 +335,8 @@ function serializeCard(card) {
     ownerRole: card.ownerRole,
     faceDown: !!card.faceDown,
     rotated: !!card.rotated,
-    markers: Number(card.markers || 0)
+    markers: Number(card.markers || 0),
+    status: card.status || { atk: '', def: '', hp: '' }
   };
 }
 function buildMythicCard(deckKey, ownerRole) {
@@ -426,6 +419,16 @@ function getPublicMatchState(matchState) {
         deckKey: matchState.players.p1.deckKey,
         mainDeckCount: matchState.players.p1.mainDeck.length,
         handCount: matchState.players.p1.hand.length,
+        hand: matchState.players.p1.hand.map(c => ({
+          id: c.id,
+          name: "Carta Oculta",
+          type: "hidden",
+          ownerRole: c.ownerRole || "p1",
+          faceDown: true,
+          rotated: false,
+          markers: 0,
+          status: null
+        })),
         trapDeckCount: matchState.players.p1.trapDeck.length,
         discardCount: matchState.players.p1.discardPile.length,
         discardPile: serializeCards(matchState.players.p1.discardPile),
@@ -445,6 +448,16 @@ function getPublicMatchState(matchState) {
         deckKey: matchState.players.p2.deckKey,
         mainDeckCount: matchState.players.p2.mainDeck.length,
         handCount: matchState.players.p2.hand.length,
+        hand: matchState.players.p2.hand.map(c => ({
+          id: c.id,
+          name: "Carta Oculta",
+          type: "hidden",
+          ownerRole: c.ownerRole || "p2",
+          faceDown: true,
+          rotated: false,
+          markers: 0,
+          status: null
+        })),
         trapDeckCount: matchState.players.p2.trapDeck.length,
         discardCount: matchState.players.p2.discardPile.length,
         discardPile: serializeCards(matchState.players.p2.discardPile),
@@ -464,14 +477,66 @@ function getPublicMatchState(matchState) {
   };
 }
 function getMatchStateForRole(matchState, role) {
-  const publicState = getPublicMatchState(matchState);
-  if (!publicState || !role || !publicState.players[role]) return publicState;
+  if (!matchState || !role || !matchState.players[role]) return null;
 
-  publicState.players[role].hand = serializeCards(
-    matchState.players[role].hand || []
-  );
+  const oppRole = getOpponentRole(role);
 
-  return publicState;
+  return {
+    started: matchState.started,
+    currentTurn: matchState.currentTurn,
+    currentPhase: matchState.currentPhase,
+    players: {
+      [role]: {
+        deckKey: matchState.players[role].deckKey,
+        mainDeckCount: matchState.players[role].mainDeck.length,
+        handCount: matchState.players[role].hand.length,
+        hand: serializeCards(matchState.players[role].hand),
+        trapDeckCount: matchState.players[role].trapDeck.length,
+        discardCount: matchState.players[role].discardPile.length,
+        discardPile: serializeCards(matchState.players[role].discardPile),
+        mythic: serializeCards(matchState.players[role].mythic),
+        creature1: serializeCards(matchState.players[role].creature1),
+        creature2: serializeCards(matchState.players[role].creature2),
+        creature3: serializeCards(matchState.players[role].creature3),
+        field: serializeCards(matchState.players[role].field),
+        magic1: serializeCards(matchState.players[role].magic1),
+        magic2: serializeCards(matchState.players[role].magic2),
+        magic3: serializeCards(matchState.players[role].magic3),
+        magic4: serializeCards(matchState.players[role].magic4),
+        hp: matchState.players[role].hp,
+        pa: matchState.players[role].pa
+      },
+      [oppRole]: {
+        deckKey: matchState.players[oppRole].deckKey,
+        mainDeckCount: matchState.players[oppRole].mainDeck.length,
+        handCount: matchState.players[oppRole].hand.length,
+        hand: matchState.players[oppRole].hand.map(c => ({
+          id: c.id,
+          name: "Carta Oculta",
+          type: "hidden",
+          ownerRole: c.ownerRole || oppRole,
+          faceDown: true,
+          rotated: false,
+          markers: 0,
+          status: null
+        })),
+        trapDeckCount: matchState.players[oppRole].trapDeck.length,
+        discardCount: matchState.players[oppRole].discardPile.length,
+        discardPile: serializeCards(matchState.players[oppRole].discardPile),
+        mythic: serializeCards(matchState.players[oppRole].mythic),
+        creature1: serializeCards(matchState.players[oppRole].creature1),
+        creature2: serializeCards(matchState.players[oppRole].creature2),
+        creature3: serializeCards(matchState.players[oppRole].creature3),
+        field: serializeCards(matchState.players[oppRole].field),
+        magic1: serializeCards(matchState.players[oppRole].magic1),
+        magic2: serializeCards(matchState.players[oppRole].magic2),
+        magic3: serializeCards(matchState.players[oppRole].magic3),
+        magic4: serializeCards(matchState.players[oppRole].magic4),
+        hp: matchState.players[oppRole].hp,
+        pa: matchState.players[oppRole].pa
+      }
+    }
+  };
 }
 function canAdvanceToPhase(currentPhase, targetPhase) {
   const currentIndex = PHASE_ORDER.indexOf(currentPhase);
@@ -887,6 +952,10 @@ io.on("connection", (socket) => {
       }
 
       const drawnTrap = playerState.trapDeck.pop();
+      drawnTrap.markers = 0;
+      drawnTrap.status = { atk: '', def: '', hp: '' };
+      drawnTrap.faceDown = false;
+      drawnTrap.rotated = false;
 playerState.hand.push(drawnTrap);
 
 io.to(roomId).emit("visualAction", {
@@ -912,6 +981,10 @@ return;
     }
 
     const drawnCard = playerState.mainDeck.pop();
+    drawnCard.markers = 0;
+    drawnCard.status = { atk: '', def: '', hp: '' };
+    drawnCard.faceDown = false;
+    drawnCard.rotated = false;
 playerState.hand.push(drawnCard);
 
 io.to(roomId).emit("visualAction", {
@@ -981,11 +1054,13 @@ emitPrivatePileView(socket, player.role, playerState, "mainDeck");
       return;
     }
 
-    // regra: toda carta que vai para descarte fica face up e desvirada
-if (toZone === "discardPile") {
-  card.faceDown = false;
-  card.rotated = false;
-}
+    // regra: limpar marcadores, status, face e rotação ao sair do campo (ir para mao, deck, descarte, deck de armadilha)
+    if (["hand", "mainDeck", "trapDeck", "discardPile"].includes(toZone)) {
+      card.markers = 0;
+      card.status = { atk: '', def: '', hp: '' };
+      card.faceDown = false;
+      card.rotated = false;
+    }
 
 toArray.push(card);
 
@@ -1032,8 +1107,28 @@ emitRoomState(roomId, room);
 
     // Se a carta foi desvirada (revelada), avisa os jogadores para tocarem a animação
     if (!faceDown) {
-      io.to(roomId).emit("cardRevealed", { card: serializeCard(card) });
+      io.to(roomId).emit("cardRevealed", { card: serializeCard(card), zoneKey });
     }
+  });
+
+  socket.on("updateCardStatus", ({ roomId, playerKey, zoneKey, cardId, status }) => {
+    const result = getRoomAndPlayer(roomId, socket.id);
+    if (!result) return;
+
+    const { room, player } = result;
+    if (!room.matchState) return;
+    if (playerKey !== player.role) return;
+
+    const zone = getZoneArray(room.matchState.players[playerKey], zoneKey);
+    if (!zone) return;
+
+    const card = zone.find((c) => c.id === cardId);
+    if (!card) return;
+
+    if (!card.status) card.status = { atk: '', def: '', hp: '' };
+    card.status = { ...card.status, ...status };
+
+    emitRoomState(roomId, room);
   });
   socket.on("shuffleDeck", ({ roomId, pileType }) => {
   const result = getRoomAndPlayer(roomId, socket.id);
@@ -1200,6 +1295,8 @@ emitRoomState(roomId, room);
   // sempre face up no descarte
   card.faceDown = false;
   card.rotated = false;
+  card.markers = 0;
+  card.status = { atk: '', def: '', hp: '' };
 
   playerState.discardPile.push(card);
 
@@ -1239,17 +1336,33 @@ emitRoomState(roomId, room);
       return;
     }
 
-    if (targetPhase === "FT") {
-      matchState.currentPhase = "IT";
-      matchState.currentTurn = getOpponentRole(player.role);
+    matchState.currentPhase = targetPhase;
+    console.log(`Sala ${roomId}: ${player.role} avançou para a fase ${targetPhase}`);
 
-      console.log(`Sala ${roomId}: turno passou para ${matchState.currentTurn}`);
-    } else {
-      matchState.currentPhase = targetPhase;
-      console.log(`Sala ${roomId}: ${player.role} avançou para a fase ${targetPhase}`);
+    emitRoomState(roomId, room);
+  });
+
+  socket.on("passTurn", ({ roomId }) => {
+    const result = getRoomAndPlayer(roomId, socket.id);
+    if (!result) return;
+
+    const { room, player } = result;
+    if (!room.matchState) return;
+
+    const matchState = room.matchState;
+
+    if (matchState.currentTurn !== player.role) {
+      socket.emit("actionError", {
+        message: "Não é o seu turno."
+      });
+      return;
     }
 
-    io.to(roomId).emit("matchStateUpdated", getPublicMatchState(matchState));
+    matchState.currentPhase = "IT";
+    matchState.currentTurn = getOpponentRole(player.role);
+
+    console.log(`Sala ${roomId}: turno passou para ${matchState.currentTurn}`);
+    emitRoomState(roomId, room);
   });
 
   socket.on("changeMythicHP", ({ roomId, targetPlayer, operation, amount }) => {
@@ -1289,7 +1402,7 @@ emitRoomState(roomId, room);
     }
 
     console.log(`Sala ${roomId}: HP de ${targetPlayer} agora é ${playerState.hp}`);
-    io.to(roomId).emit("matchStateUpdated", getPublicMatchState(room.matchState));
+    emitRoomState(roomId, room);
   });
 
   socket.on("changePA", ({ roomId, targetPlayer, amount }) => {
@@ -1319,7 +1432,7 @@ emitRoomState(roomId, room);
     playerState.pa = Math.max(0, Math.min(12, playerState.pa + value));
 
     console.log(`Sala ${roomId}: PA de ${targetPlayer} agora é ${playerState.pa}`);
-    io.to(roomId).emit("matchStateUpdated", getPublicMatchState(room.matchState));
+    emitRoomState(roomId, room);
   });
 
   socket.on("rollDice", ({ roomId }) => {

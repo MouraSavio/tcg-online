@@ -5,24 +5,38 @@ let serverMatchState = null;
 let selectedDeck = null;
 
 const audioManager = {
-  sounds: {
-    clique: "assets/sounds/clique.mp3",
-    embaralhamento: "assets/sounds/embaralhamento.mp3",
-    comprar: "assets/sounds/comprar.mp3",
-    revelar: "assets/sounds/revelar.mp3",
-    efeito: "assets/sounds/efeito.mp3",
-    ataque: "assets/sounds/ataque.mp3",
-    cartaZona: "assets/sounds/carta-zona.mp3",
-    criaturaInvocacao: "assets/sounds/criatura-invocacao.mp3",
-    magiaAtivacao: "assets/sounds/magia-ativacao.mp3"
+  sounds: {},
+  init() {
+    const files = {
+      clique: "assets/sounds/clique.mp3",
+      embaralhamento: "assets/sounds/embaralhamento.mp3",
+      comprar: "assets/sounds/comprar.mp3",
+      revelar: "assets/sounds/revelar.mp3",
+      efeito: "assets/sounds/efeito.mp3",
+      ataque: "assets/sounds/ataque.mp3",
+      cartaZona: "assets/sounds/carta-zona.mp3",
+      criaturaInvocacao: "assets/sounds/criatura-invocacao.mp3",
+      magiaAtivacao: "assets/sounds/magia-ativacao.mp3",
+      cura: "assets/sounds/cura.mp3",
+      dano: "assets/sounds/dano.mp3",
+      vitoria: "assets/sounds/vitoria.mp3",
+      derrota: "assets/sounds/derrota.mp3"
+    };
+
+    for (const [key, path] of Object.entries(files)) {
+      const audio = new Audio(path);
+      audio.preload = "auto";
+      this.sounds[key] = audio;
+    }
   },
   play(name) {
     if (this.sounds[name]) {
-      const audio = new Audio(this.sounds[name]);
-      audio.play().catch(err => console.warn("Áudio bloqueado pelo navegador:", err));
+      const audioClone = this.sounds[name].cloneNode();
+      audioClone.play().catch(err => console.warn("Áudio bloqueado pelo navegador:", err));
     }
   }
 };
+audioManager.init();
 
 let errorToastTimeout = null;
 let chatMessagesState = [];
@@ -34,6 +48,7 @@ const remoteSelections = {
   p1: null,
   p2: null
 };
+const recentHighlights = {};
 
 let currentDeckSelections = {
   p1: null,
@@ -90,10 +105,10 @@ const ZONE_LABELS = {
   creature2: "Criatura",
   creature3: "Criatura",
   field: "Campo",
-  magic1: "Magia",
-  magic2: "Magia",
-  magic3: "Magia",
-  magic4: "Magia",
+  magic1: "Magia/Armadilha",
+  magic2: "Magia/Armadilha",
+  magic3: "Magia/Armadilha",
+  magic4: "Magia/Armadilha",
   deckPile: "Deck",
   trapDeckPile: "Deck Armadilha",
   discardPile: "Descarte",
@@ -442,6 +457,7 @@ const state = {
   attackMode: null,
   openMenu: null,
   pileViewer: null,
+  statusEditor: null,
   privatePiles: {
     p1: {
       deckPile: [],
@@ -567,7 +583,8 @@ function hydrateServerCard(card, ownerRole) {
     originalOwner: card.ownerRole || ownerRole,
     faceDown: !!card.faceDown,
     rotated: !!card.rotated,
-    markers: Number(card.markers || 0)
+    markers: Number(card.markers || 0),
+    status: card.status || null
   };
 }
 
@@ -948,6 +965,7 @@ function startSynchronizedGame(decks, matchState) {
   state.attackMode = null;
   state.currentPhase = "IT";
   state.pileViewer = null;
+  state.statusEditor = null;
   remoteSelections.p1 = null;
   remoteSelections.p2 = null;
 
@@ -1013,14 +1031,18 @@ function applyServerStateToUI() {
   state.players.p2.magic4 = hydrateServerCards(serverMatchState.players.p2.magic4, "p2");
   state.players.p2.discardPile = hydrateServerCards(serverMatchState.players.p2.discardPile, "p2");
 
-  if (myRole && serverMatchState.players[myRole]?.hand) {
-  state.players[myRole].hand = hydrateServerCards(
-    serverMatchState.players[myRole].hand,
-    myRole
-  );
-}
+  if (myRole) {
+    state.players[myRole].hand = hydrateServerCards(
+      serverMatchState.players[myRole].hand,
+      myRole
+    );
+    const oppRole = getOpponentRole(myRole);
+    state.players[oppRole].hand = hydrateServerCards(
+      serverMatchState.players[oppRole].hand,
+      oppRole
+    );
+  }
 
-  syncOpponentHandVisual();
   refreshOpenPrivatePileIfNeeded();
   renderBoard();
 }
@@ -1050,33 +1072,6 @@ function syncDeckPileCount(playerKey, count) {
 
 function syncTrapDeckPileCount(playerKey, count) {
   state.players[playerKey].trapDeckPile = makePlaceholderPileCards(count, "trapDeck", playerKey);
-}
-
-function makeOpponentHandCards(count, ownerRole) {
-  const cards = [];
-
-  for (let i = 0; i < count; i++) {
-    cards.push({
-      id: `${ownerRole}-hidden-hand-${i}`,
-      name: "Carta Oculta",
-      image: "",
-      type: "hidden",
-      owner: ownerRole,
-      originalOwner: ownerRole,
-      faceDown: true,
-      rotated: false
-    });
-  }
-
-  return cards;
-}
-
-function syncOpponentHandVisual() {
-  if (!myRole || !serverMatchState) return;
-
-  const opponentRole = getOpponentRole(myRole);
-  const opponentHandCount = serverMatchState.players[opponentRole].handCount || 0;
-  state.players[opponentRole].hand = makeOpponentHandCards(opponentHandCount, opponentRole);
 }
 
 function updatePerspectiveLabels() {
@@ -1482,6 +1477,11 @@ function changeMythicHP(targetPlayer, operation, inputId = null) {
   let value = parseInt(input.value, 10);
   if (isNaN(value) || value < 0) value = 0;
 
+  if (value > 0) {
+    if (operation === "add") audioManager.play("cura");
+    else if (operation === "subtract") audioManager.play("dano");
+  }
+
   socket.emit("changeMythicHP", {
     roomId,
     targetPlayer: targetPlayer === 1 ? "p1" : "p2",
@@ -1495,6 +1495,9 @@ function updatePADisplay() {
 }
 
 function changePA(player, amount) {
+  if (amount > 0) audioManager.play("cura");
+  else if (amount < 0) audioManager.play("cura"); // Som temporário de "cura" para o consumo de PA
+
   socket.emit("changePA", {
     roomId,
     targetPlayer: player === 1 ? "p1" : "p2",
@@ -1511,6 +1514,8 @@ function applyTurnGain(player, inputId = null) {
 
   let gain = parseInt(gainInput.value, 10);
   if (isNaN(gain) || gain < 0) gain = 0;
+
+  if (gain > 0) audioManager.play("cura");
 
   socket.emit("changePA", {
     roomId,
@@ -1648,18 +1653,14 @@ function animateCardTravel(payload) {
   const isMagicCard = payload.card && (payload.card.type === "spell" || payload.card.type === "trap");
 
   const isBoardZone = ["mythic", "creature1", "creature2", "creature3", "field", "magic1", "magic2", "magic3", "magic4"].includes(payload.toZone);
+  const isToHandFromDeckOrDiscard = payload.kind === "move" && payload.toZone === "hand" && ["mainDeck", "trapDeck", "discardPile"].includes(payload.fromZone);
+  const isBoardZoneAndFaceUp = isBoardZone && payload.card && !payload.card.faceDown;
 
-  // Revela a carta grande na tela se:
-  // 1) For buscada/recuperada para a mão vindo do deck ou descarte.
-  // 2) For colocada em uma zona do tabuleiro e estiver virada para cima.
-  if (
-    (payload.kind === "move" && payload.toZone === "hand" && ["mainDeck", "trapDeck", "discardPile"].includes(payload.fromZone)) ||
-    (isBoardZone && payload.card && !payload.card.faceDown)
-  ) {
+  if (isToHandFromDeckOrDiscard) {
     const ownerRole = payload.card?.ownerRole || payload.toPlayer;
     const hydratedCard = hydrateServerCard(payload.card, ownerRole);
     if (hydratedCard && hydratedCard.image) {
-      showLargeEffectImage(hydratedCard.image);
+      showLargeEffectImage(hydratedCard.image, hydratedCard.type, isBoardZoneAndFaceUp);
     }
   }
 
@@ -1740,7 +1741,27 @@ function animateCardTravel(payload) {
   });
 
   setTimeout(() => {
+    // Revela a carta grande na tela quando ela "pousa" no tabuleiro
+    if (isBoardZoneAndFaceUp) {
+      const ownerRole = payload.card?.ownerRole || payload.toPlayer;
+      const hydratedCard = hydrateServerCard(payload.card, ownerRole);
+      if (hydratedCard && hydratedCard.image) {
+        showLargeEffectImage(hydratedCard.image, hydratedCard.type, true);
+      }
+    }
+
     ghost.remove();
+
+    if (isBoardZone && payload.card && !payload.card.faceDown) {
+      recentHighlights[payload.card.id] = { type: payload.card.type, expires: Date.now() + 1200 };
+      const actualCardEl = document.getElementById(`card-${payload.card.id}`);
+      if (actualCardEl) {
+        actualCardEl.classList.add(`card-enter-${payload.card.type}`);
+        setTimeout(() => {
+          if (actualCardEl) actualCardEl.classList.remove(`card-enter-${payload.card.type}`);
+        }, 1200);
+      }
+    }
   }, 420);
 }
 
@@ -1767,11 +1788,11 @@ function animateEffectByCardId(cardId, serverCard) {
   }
 
   if (localCard && localCard.image) {
-    showLargeEffectImage(localCard.image);
+    showLargeEffectImage(localCard.image, localCard.type);
   }
 }
 
-function showLargeEffectImage(imageSrc) {
+function showLargeEffectImage(imageSrc, type = "creature", withGlow = true) {
   const existing = document.getElementById("effectLargeOverlay");
   if (existing) existing.remove();
 
@@ -1793,8 +1814,19 @@ function showLargeEffectImage(imageSrc) {
   img.style.maxWidth = "90vw";
   img.style.objectFit = "contain";
   img.style.borderRadius = "18px";
-  img.style.boxShadow = "0 0 60px rgba(255, 209, 102, 0.6), 0 0 20px rgba(255, 255, 255, 0.3)";
   img.style.animation = "effectCardPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards";
+
+  if (withGlow) {
+    let glowColor = "rgba(255, 209, 102, 0.85)"; // criatura / fera mítica (Dourado)
+    if (type === "spell") {
+      glowColor = "rgba(226, 232, 240, 0.9)"; // Prateado/Branco
+    } else if (type === "trap") {
+      glowColor = "rgba(192, 132, 252, 0.9)"; // Roxo
+    }
+    img.style.boxShadow = `0 0 100px 25px ${glowColor}, 0 0 50px 15px rgba(255, 255, 255, 0.6)`;
+  } else {
+    img.style.boxShadow = `0 15px 35px rgba(0, 0, 0, 0.8)`;
+  }
 
   overlay.appendChild(img);
   document.body.appendChild(overlay);
@@ -1866,6 +1898,26 @@ function renderPhaseButtons() {
     btn.onclick = () => setPhase(phase.code);
     container.appendChild(btn);
   });
+
+  const passBtn = document.createElement("button");
+  passBtn.className = "phase-btn pass-turn-btn";
+  passBtn.textContent = "Passar Turno";
+  
+  if (!isMyTurn) {
+    passBtn.disabled = true;
+    passBtn.style.opacity = "0.5";
+    passBtn.style.cursor = "not-allowed";
+  } else if (state.currentPhase === "FT") {
+    passBtn.classList.add("highlight-pass");
+  }
+  
+  passBtn.onclick = () => passTurn();
+  container.appendChild(passBtn);
+}
+
+function passTurn() {
+  if (!roomId) return;
+  socket.emit("passTurn", { roomId });
 }
 
 function setPhase(code) {
@@ -2001,6 +2053,48 @@ function renderHandInElement(handElementId, playerKey) {
   });
 }
 
+function appendStatusBar(card, containerEl, hidden) {
+  if (hidden) return;
+  if (!card.status) return;
+
+  const getVal = (val) => (val !== null && val !== undefined && val !== "") ? String(val).trim() : "";
+  
+  const atkStr = getVal(card.status.atk);
+  const defStr = getVal(card.status.def);
+  const hpStr  = getVal(card.status.hp);
+
+  if (atkStr === "" && defStr === "" && hpStr === "") return;
+
+  const statusBar = document.createElement("div");
+  statusBar.className = "card-status-bar";
+  
+  // Estilos inline para garantir exibição imediata mesmo com cache forte do navegador
+  statusBar.style.position = "absolute";
+  statusBar.style.bottom = "0";
+  statusBar.style.left = "0";
+  statusBar.style.width = "100%";
+  statusBar.style.background = "rgba(0, 0, 0, 0.85)";
+  statusBar.style.color = "#fff";
+  statusBar.style.fontSize = "11px";
+  statusBar.style.fontWeight = "800";
+  statusBar.style.display = "flex";
+  statusBar.style.justifyContent = "space-evenly";
+  statusBar.style.padding = "4px 0";
+  statusBar.style.boxSizing = "border-box";
+  statusBar.style.zIndex = "5";
+  statusBar.style.borderTop = "1px solid rgba(255, 209, 102, 0.4)";
+  statusBar.style.borderRadius = "0 0 6px 6px";
+  statusBar.style.textShadow = "1px 1px 2px #000";
+  statusBar.style.pointerEvents = "none";
+  
+  const atk = atkStr !== "" ? atkStr : "-";
+  const def = defStr !== "" ? defStr : "-";
+  const hp = hpStr !== "" ? hpStr : "-";
+
+  statusBar.innerHTML = `<span>⚔️ ${atk}</span><span>🛡️ ${def}</span><span>❤️ ${hp}</span>`;
+  containerEl.appendChild(statusBar);
+}
+
 function createCardElement(card, playerKey, containerKey, options = {}) {
   const hidden = options.forceFaceUp ? false : isCardHidden(card, playerKey, containerKey);
 
@@ -2017,6 +2111,10 @@ function createCardElement(card, playerKey, containerKey, options = {}) {
 
   if (card.rotated) {
     cardEl.classList.add("rotated");
+  }
+
+  if (recentHighlights[card.id] && Date.now() < recentHighlights[card.id].expires) {
+    cardEl.classList.add(`card-enter-${recentHighlights[card.id].type}`);
   }
 
   cardEl.id = `card-${card.id}`;
@@ -2107,6 +2205,9 @@ function createCardElement(card, playerKey, containerKey, options = {}) {
     markerBadge.textContent = card.markers;
     cardEl.appendChild(markerBadge);
   }
+
+  appendStatusBar(card, cardEl, hidden);
+
   return cardEl;
 }
 
@@ -2205,6 +2306,8 @@ function renderSidePreview() {
     previewCard.appendChild(img);
   }
 
+  appendStatusBar(ref.card, previewCard, hidden);
+
   area.appendChild(previewCard);
 }
 
@@ -2247,6 +2350,8 @@ function openCardPreview(card, hidden) {
 
     previewCard.appendChild(img);
   }
+
+  appendStatusBar(card, previewCard, hidden);
 
   area.appendChild(previewCard);
 
@@ -2331,8 +2436,15 @@ menu.appendChild(menuButton("Embaralhar", () => shufflePile(playerKey, container
     }
 
     if (isInsideDeck && isMine) {
-      menu.appendChild(menuButton("Virar / Revelar", () => toggleFaceDown(cardId, playerKey, containerKey)));
-      menu.appendChild(menuButton("Girar", () => toggleRotation(cardId, playerKey, containerKey)));
+      const faceDownLabel = card?.faceDown ? "Revelar" : "Virar";
+      menu.appendChild(menuButton(faceDownLabel, () => toggleFaceDown(cardId, playerKey, containerKey)));
+      if (card && (card.type === "creature" || card.type === "mythic")) {
+        if (card.rotated) {
+          menu.appendChild(menuButton("Modo de Ataque", () => setRotationState(cardId, playerKey, containerKey, false)));
+        } else {
+          menu.appendChild(menuButton("Modo de Defesa", () => setRotationState(cardId, playerKey, containerKey, true)));
+        }
+      }
       menu.appendChild(menuButton("Adicionar à mão", () => moveCard(cardId, playerKey, containerKey, myRole, "hand")));
       menu.appendChild(menuButton("Enviar ao descarte", () => moveCard(cardId, playerKey, containerKey, myRole, "discardPile")));
       menu.appendChild(menuButton("Adicionar à zona de campo", () => openEmptyZoneChoiceMenu(x, y, cardId, playerKey, containerKey)));
@@ -2342,13 +2454,27 @@ menu.appendChild(menuButton("Embaralhar", () => shufflePile(playerKey, container
       }
 
       if (!PILE_CONTAINERS.includes(containerKey) && containerKey !== "hand") {
-        menu.appendChild(menuButton("Atacar", () => startAttack(cardId, playerKey, containerKey)));
+        if (card && (card.type === "creature" || card.type === "mythic") && state.currentPhase === "FB") {
+          menu.appendChild(menuButton("Atacar", () => startAttack(cardId, playerKey, containerKey)));
+        }
       }
 
-      menu.appendChild(menuButton("Virar / Revelar", () => toggleFaceDown(cardId, playerKey, containerKey)));
-      menu.appendChild(menuButton("Girar", () => toggleRotation(cardId, playerKey, containerKey)));
+      const faceDownLabel = card?.faceDown ? "Revelar" : "Virar";
+      menu.appendChild(menuButton(faceDownLabel, () => toggleFaceDown(cardId, playerKey, containerKey)));
+      if (card && (card.type === "creature" || card.type === "mythic")) {
+        if (card.rotated) {
+          menu.appendChild(menuButton("Modo de Ataque", () => setRotationState(cardId, playerKey, containerKey, false)));
+        } else {
+          menu.appendChild(menuButton("Modo de Defesa", () => setRotationState(cardId, playerKey, containerKey, true)));
+        }
+      }
 
       if (!PILE_CONTAINERS.includes(containerKey) && containerKey !== "hand") {
+        // NOVO: Adiciona a opção "Editar Status" ao clicar com o botão direito
+        if (isMine && card && (card.type === "creature" || card.type === "mythic")) {
+          menu.appendChild(menuButton("Editar Status", () => openCardStatusEditor(cardId, playerKey, containerKey)));
+        }
+
         menu.appendChild(menuButton("Adicionar marcador", () => {
           audioManager.play("clique");
           changeCardMarkers(cardId, playerKey, containerKey, 1);
@@ -2558,6 +2684,7 @@ function renderPileViewerIfOpen() {
 function closePileViewer() {
   if (state.pileViewer && isDeckLikeZone(state.pileViewer.containerKey) && state.pileViewer.playerKey === myRole) {
     socket.emit("viewingDeckStatus", { roomId, isViewing: false });
+    shufflePile(state.pileViewer.playerKey, state.pileViewer.containerKey);
   }
 
   state.pileViewer = null;
@@ -2751,6 +2878,13 @@ function toggleFaceDown(cardId, playerKey, containerKey) {
   if (!card) return;
 
   audioManager.play("revelar");
+  const isBoardZone = ["mythic", "creature1", "creature2", "creature3", "field", "magic1", "magic2", "magic3", "magic4"].includes(containerKey);
+  
+  if (card.faceDown && isBoardZone) {
+    audioManager.play("efeito");
+  } else {
+    audioManager.play("revelar");
+  }
 
   socket.emit("setCardFaceDown", {
     roomId,
@@ -2761,7 +2895,7 @@ function toggleFaceDown(cardId, playerKey, containerKey) {
   });
 }
 
-function toggleRotation(cardId, playerKey, containerKey) {
+function setRotationState(cardId, playerKey, containerKey, rotated) {
   if (playerKey !== myRole) {
     alert("Você não pode alterar cartas do lado do oponente.");
     return;
@@ -2775,7 +2909,7 @@ function toggleRotation(cardId, playerKey, containerKey) {
     playerKey,
     zoneKey: uiZoneToServerZone(containerKey),
     cardId,
-    rotated: !card.rotated
+    rotated: !!rotated
   });
 }
 
@@ -2873,6 +3007,19 @@ function animateAttackArrow(sourceEl, targetEl) {
   const y2 = target.top + target.height / 2;
 
   const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+  
+  // Filtro de Brilho (Glow) para a flecha
+  const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+  filter.setAttribute("id", "attackGlow");
+  filter.innerHTML = `
+    <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+    <feMerge>
+      <feMergeNode in="coloredBlur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  `;
+  defs.appendChild(filter);
+
   const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
   marker.setAttribute("id", "arrowHead");
   marker.setAttribute("markerWidth", "10");
@@ -2887,6 +3034,21 @@ function animateAttackArrow(sourceEl, targetEl) {
 
   marker.appendChild(arrowPath);
   defs.appendChild(marker);
+
+  // Gradiente simulando rastro (Trail)
+  const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+  gradient.setAttribute("id", "trailGradient");
+  gradient.setAttribute("gradientUnits", "userSpaceOnUse");
+  gradient.setAttribute("x1", x1);
+  gradient.setAttribute("y1", y1);
+  gradient.setAttribute("x2", x1);
+  gradient.setAttribute("y2", y1);
+  gradient.innerHTML = `
+    <stop offset="0%" stop-color="rgba(255, 45, 45, 0)" />
+    <stop offset="60%" stop-color="rgba(255, 45, 45, 0.4)" />
+    <stop offset="100%" stop-color="#ff2d2d" />
+  `;
+  defs.appendChild(gradient);
   svg.appendChild(defs);
 
   const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -2894,31 +3056,77 @@ function animateAttackArrow(sourceEl, targetEl) {
   line.setAttribute("y1", y1);
   line.setAttribute("x2", x1);
   line.setAttribute("y2", y1);
-  line.setAttribute("stroke", "#ff2d2d");
-  line.setAttribute("stroke-width", "6");
+  line.setAttribute("stroke", "url(#trailGradient)");
+  line.setAttribute("stroke-width", "8");
   line.setAttribute("stroke-linecap", "round");
+  line.setAttribute("filter", "url(#attackGlow)");
   line.setAttribute("marker-end", "url(#arrowHead)");
   svg.appendChild(line);
 
-  const duration = 250;
+  // Função de Easing para suavidade e aceleração/desaceleração
+  function easeOutQuart(t) {
+    return 1 - (--t) * t * t * t;
+  }
+
+  const duration = 380;
   const start = performance.now();
 
   function step(time) {
-    const progress = Math.min((time - start) / duration, 1);
+    let rawProgress = (time - start) / duration;
+    if (rawProgress > 1) rawProgress = 1;
+
+    const progress = easeOutQuart(rawProgress);
+
     const currentX = x1 + (x2 - x1) * progress;
     const currentY = y1 + (y2 - y1) * progress;
 
     line.setAttribute("x2", currentX);
     line.setAttribute("y2", currentY);
+    gradient.setAttribute("x2", currentX);
+    gradient.setAttribute("y2", currentY);
 
-    if (progress < 1) {
+    // Retarda o início da base da linha para criar um "Cometa" 
+    const tailProgress = Math.max(0, rawProgress - 0.25);
+    const easeTail = easeOutQuart(tailProgress * (1 / 0.75));
+    
+    const tailX = x1 + (x2 - x1) * easeTail;
+    const tailY = y1 + (y2 - y1) * easeTail;
+    
+    line.setAttribute("x1", tailX);
+    line.setAttribute("y1", tailY);
+    gradient.setAttribute("x1", tailX);
+    gradient.setAttribute("y1", tailY);
+
+    if (rawProgress < 1) {
       requestAnimationFrame(step);
     } else {
-      setTimeout(clearAttackArrow, 700);
+      triggerImpact(x2, y2, targetEl);
+      setTimeout(clearAttackArrow, 150); // Remove o rastro após o impacto
     }
   }
 
   requestAnimationFrame(step);
+}
+
+function triggerImpact(x, y, targetEl) {
+  const flash = document.createElement("div");
+  flash.className = "impact-flash";
+  flash.style.left = x + "px";
+  flash.style.top = y + "px";
+  flash.style.width = "50px";
+  flash.style.height = "50px";
+  document.body.appendChild(flash);
+
+  if (targetEl) {
+    targetEl.classList.remove("target-shake");
+    void targetEl.offsetWidth; // Reflow para reiniciar a animação
+    targetEl.classList.add("target-shake");
+  }
+
+  setTimeout(() => {
+    if (flash.parentNode) flash.remove();
+    if (targetEl) targetEl.classList.remove("target-shake");
+  }, 400);
 }
 
 function clearAttackArrow() {
@@ -3078,10 +3286,10 @@ socket.on("deckSelectionsUpdated", (deckSelections) => {
 
 let myJokenpoChoice = null;
 
-function getJokenpoEmoji(choice) {
-  if (choice === 'pedra') return '🪨';
-  if (choice === 'papel') return '📄';
-  if (choice === 'tesoura') return '✂️';
+function getJokenpoImageHTML(choice) {
+  if (choice === 'pedra') return '<img src="assets/jokenpo/pedra.png" alt="Pedra">';
+  if (choice === 'papel') return '<img src="assets/jokenpo/papel.png" alt="Papel">';
+  if (choice === 'tesoura') return '<img src="assets/jokenpo/tesoura.png" alt="Tesoura">';
   return '❓';
 }
 
@@ -3096,6 +3304,8 @@ socket.on("startPreMatchDecision", (data) => {
     document.getElementById("jokenpoStatus").textContent = "Escolha sua jogada:";
     document.getElementById("jokenpoButtons").style.display = "flex";
     document.getElementById("jokenpoAnimation").style.display = "none";
+    document.getElementById("jokenpoMyChoice").innerHTML = "❓";
+    document.getElementById("jokenpoOppChoice").innerHTML = "❓";
     myJokenpoChoice = null;
   } else if (data.phase === 'choosingTurn') {
     setupTurnChoice(data.decider);
@@ -3112,8 +3322,8 @@ window.sendJokenpo = function(choice) {
 socket.on("jokenpoResult", (data) => {
   audioManager.play("revelar");
   document.getElementById("jokenpoAnimation").style.display = "flex";
-  document.getElementById("jokenpoMyChoice").textContent = getJokenpoEmoji(myRole === 'p1' ? data.p1Choice : data.p2Choice);
-  document.getElementById("jokenpoOppChoice").textContent = getJokenpoEmoji(myRole === 'p1' ? data.p2Choice : data.p1Choice);
+  document.getElementById("jokenpoMyChoice").innerHTML = getJokenpoImageHTML(myRole === 'p1' ? data.p1Choice : data.p2Choice);
+  document.getElementById("jokenpoOppChoice").innerHTML = getJokenpoImageHTML(myRole === 'p1' ? data.p2Choice : data.p1Choice);
 
   setTimeout(() => {
     if (data.winner === 'tie') {
@@ -3122,6 +3332,8 @@ socket.on("jokenpoResult", (data) => {
         document.getElementById("jokenpoAnimation").style.display = "none";
         document.getElementById("jokenpoButtons").style.display = "flex";
         document.getElementById("jokenpoStatus").textContent = "Escolha sua jogada:";
+        document.getElementById("jokenpoMyChoice").innerHTML = "❓";
+        document.getElementById("jokenpoOppChoice").innerHTML = "❓";
       }, 2000);
     } else {
       const amIWinner = data.winner === myRole;
@@ -3256,7 +3468,7 @@ socket.on("selectedCardChanged", ({ role, cardId }) => {
   renderBoard();
 });
 
-socket.on("cardRevealed", ({ card }) => {
+socket.on("cardRevealed", ({ card, zoneKey }) => {
   if (!card) return;
 
   const hydratedCard = hydrateServerCard(card, card.ownerRole || "p1");
@@ -3265,11 +3477,61 @@ socket.on("cardRevealed", ({ card }) => {
     if (card.ownerRole !== myRole) {
       audioManager.play("revelar");
     }
-    showLargeEffectImage(hydratedCard.image);
+    
+    // Busca a zona da carta localmente caso o servidor não tenha enviado a variável zoneKey
+    let actualZone = zoneKey;
+    if (!actualZone) {
+      const loc = findCardLocation(card.id);
+      if (loc) actualZone = loc.containerKey;
+    }
+
+    const uiZone = actualZone ? serverZoneToUiZone(actualZone) : null;
+    const isNonBoardZone = ["hand", "deckPile", "trapDeckPile", "discardPile", "mainDeck", "trapDeck"].includes(uiZone || actualZone);
+
+    if (card.ownerRole !== myRole) {
+      if (!isNonBoardZone) {
+        audioManager.play("efeito");
+      } else {
+        audioManager.play("revelar");
+      }
+    }
+
+    // Reproduz a animação (pulo na tela) se a carta NÃO estiver na mão, descarte ou deck
+    if (!isNonBoardZone) {
+      showLargeEffectImage(hydratedCard.image, hydratedCard.type);
+      
+      const actualCardEl = document.getElementById(`card-${card.id}`);
+      if (actualCardEl) {
+        actualCardEl.classList.add(`card-enter-${hydratedCard.type}`);
+        setTimeout(() => {
+          if (actualCardEl) actualCardEl.classList.remove(`card-enter-${hydratedCard.type}`);
+        }, 1200);
+      }
+    }
   }
 });
 
 socket.on("visualAction", (payload) => {
+  if (payload.card) {
+    let needsRender = false;
+
+    // Limpa a sua própria seleção se a carta for movida
+    if (state.selectedCardId === payload.card.id) {
+      selectCard(payload.card.id); // Isso desmarca, avisa o servidor e renderiza
+    }
+
+    // Limpa instantaneamente as marcações do oponente para não haver delay visual
+    for (const role in remoteSelections) {
+      if (remoteSelections[role] === payload.card.id) {
+        remoteSelections[role] = null;
+        needsRender = true;
+      }
+    }
+
+    if (needsRender && state.selectedCardId !== payload.card.id) {
+      renderBoard();
+    }
+  }
   animateCardTravel(payload);
 });
 
@@ -3293,13 +3555,67 @@ socket.on("matchEnded", ({ winner, loser, reason }) => {
   if (winner === myRole) {
     title.textContent = "Você Venceu!";
     title.className = "win";
+    audioManager.play("vitoria");
   } else {
     title.textContent = "Você Perdeu!";
     title.className = "lose";
+    audioManager.play("derrota");
   }
 
   modal.style.display = "block";
 });
+
+function openCardStatusEditor(cardId, playerKey, containerKey) {
+  const card = findCardInContainer(playerKey, containerKey, cardId);
+  if (!card) return;
+
+  state.statusEditor = { cardId, playerKey, containerKey };
+
+  const atkInput = document.getElementById("statusAtkInput");
+  const defInput = document.getElementById("statusDefInput");
+  const hpInput = document.getElementById("statusHpInput");
+
+  if (atkInput) atkInput.value = card.status?.atk || "";
+  if (defInput) defInput.value = card.status?.def || "";
+  if (hpInput) hpInput.value = card.status?.hp || "";
+
+  const modal = document.getElementById("cardStatusModal");
+  if (modal) modal.style.display = "block";
+}
+
+function closeCardStatusEditor() {
+  state.statusEditor = null;
+  const modal = document.getElementById("cardStatusModal");
+  if (modal) modal.style.display = "none";
+}
+
+function closeCardStatusEditorOnOverlay(event) {
+  if (event.target.id === "cardStatusModal") {
+    closeCardStatusEditor();
+  }
+}
+
+function saveCardStatus() {
+  if (!state.statusEditor) return;
+
+  const atkInput = document.getElementById("statusAtkInput");
+  const defInput = document.getElementById("statusDefInput");
+  const hpInput = document.getElementById("statusHpInput");
+
+  const atk = atkInput ? atkInput.value.trim() : "";
+  const def = defInput ? defInput.value.trim() : "";
+  const hp = hpInput ? hpInput.value.trim() : "";
+
+  socket.emit("updateCardStatus", {
+    roomId,
+    playerKey: state.statusEditor.playerKey,
+    zoneKey: uiZoneToServerZone(state.statusEditor.containerKey),
+    cardId: state.statusEditor.cardId,
+    status: { atk, def, hp }
+  });
+
+  closeCardStatusEditor();
+}
 
 socket.on("goToDeckSelection", () => {
   closeGameOverModal();
@@ -3404,3 +3720,8 @@ window.closeDeckPreviewOnOverlay = closeDeckPreviewOnOverlay;
 window.surrenderMatch = surrenderMatch;
 window.requestRematch = requestRematch;
 window.requestReturnToDeckSelection = requestReturnToDeckSelection;
+window.openCardStatusEditor = openCardStatusEditor;
+window.closeCardStatusEditor = closeCardStatusEditor;
+window.closeCardStatusEditorOnOverlay = closeCardStatusEditorOnOverlay;
+window.saveCardStatus = saveCardStatus;
+window.passTurn = passTurn;

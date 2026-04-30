@@ -506,6 +506,31 @@
     </div>
   </div>
 
+  <!-- MODAL STATUS DA CARTA -->
+  <div id="cardStatusModal" class="modal" onclick="closeCardStatusEditorOnOverlay(event)">
+    <div class="modal-content status-modal-content">
+      <h2>Editar Status</h2>
+      <div class="status-inputs-row">
+        <div class="status-input-group">
+          <label for="statusAtkInput">⚔️ ATK</label>
+          <input id="statusAtkInput" type="number" placeholder="Ex: 80">
+        </div>
+        <div class="status-input-group">
+          <label for="statusDefInput">🛡️ DEF</label>
+          <input id="statusDefInput" type="number" placeholder="Ex: 60">
+        </div>
+        <div class="status-input-group">
+          <label for="statusHpInput">❤️ HP</label>
+          <input id="statusHpInput" type="number" placeholder="Ex: 150">
+        </div>
+      </div>
+      <div class="status-form-actions">
+        <button class="deck-action-btn deck-action-btn-secondary" style="height:42px" onclick="closeCardStatusEditor()">Cancelar</button>
+        <button class="deck-action-btn deck-action-btn-primary" style="height:42px" onclick="saveCardStatus()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- PREVIEW CARTA -->
   <div id="cardPreviewModal" class="modal" onclick="closeCardPreviewOnOverlay(event)">
     <div class="preview-content">
@@ -570,9 +595,18 @@
         </div>
 
         <div class="jokenpo-buttons" id="jokenpoButtons">
-          <button onclick="sendJokenpo('pedra')">🪨 Pedra</button>
-          <button onclick="sendJokenpo('papel')">📄 Papel</button>
-          <button onclick="sendJokenpo('tesoura')">✂️ Tesoura</button>
+          <button class="jokenpo-btn" onclick="sendJokenpo('pedra')">
+            <img src="assets/jokenpo/pedra.png" alt="Pedra">
+            <span>Pedra</span>
+          </button>
+          <button class="jokenpo-btn" onclick="sendJokenpo('papel')">
+            <img src="assets/jokenpo/papel.png" alt="Papel">
+            <span>Papel</span>
+          </button>
+          <button class="jokenpo-btn" onclick="sendJokenpo('tesoura')">
+            <img src="assets/jokenpo/tesoura.png" alt="Tesoura">
+            <span>Tesoura</span>
+          </button>
         </div>
       </div>
 
