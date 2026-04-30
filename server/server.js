@@ -95,6 +95,7 @@ const SERVER_DECKS = {
       "primple-mago",
       "primple-sonhador",
       "primple-sonhador",
+      "primple-sonhador",
       "primple-rei-sonhar"
     ],
     spells: [
@@ -103,7 +104,6 @@ const SERVER_DECKS = {
       "encorajamento-primple",
       "lupa-milagrosa",
       "oceano-primordial",
-      "pesquisa-arcana",
       "pesquisa-arcana",
       "pocao-mana",
       "pote-gula",
@@ -130,7 +130,7 @@ const SERVER_DECKS = {
     mythic: "terrakhor-soberano",
 
     creatures: [
-      "draco-rex-duas-cabeças","draco-rex-duas-cabeças",
+      "draco-rex-duas-cabeças","ultra-rinagron",
       "e1-ferralite","e2-ferradon","e3-ferragron",
       "hipnodon","hipnodon",
       "rex","rex",
@@ -974,9 +974,14 @@ return;
     }
 
     if (playerState.mainDeck.length === 0) {
-      socket.emit("actionError", {
-        message: "Seu deck principal está vazio."
+      const winner = getOpponentRole(player.role);
+      io.to(roomId).emit("matchEnded", {
+        winner,
+        loser: player.role,
+        reason: "deckout"
       });
+      room.lastLoser = player.role;
+      emitRoomState(roomId, room);
       return;
     }
 
@@ -1403,6 +1408,16 @@ emitRoomState(roomId, room);
 
     console.log(`Sala ${roomId}: HP de ${targetPlayer} agora é ${playerState.hp}`);
     emitRoomState(roomId, room);
+
+    if (playerState.hp === 0) {
+      const winner = getOpponentRole(targetPlayer);
+      io.to(roomId).emit("matchEnded", {
+        winner,
+        loser: targetPlayer,
+        reason: "regicida"
+      });
+      room.lastLoser = targetPlayer;
+    }
   });
 
   socket.on("changePA", ({ roomId, targetPlayer, amount }) => {

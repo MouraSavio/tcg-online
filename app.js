@@ -215,6 +215,7 @@ const DECKS = {
       "primple-mago",
       "primple-sonhador",
       "primple-sonhador",
+      "primple-sonhador",
       "primple-rei-sonhar"
     ],
     spells: [
@@ -223,7 +224,6 @@ const DECKS = {
       "encorajamento-primple",
       "lupa-milagrosa",
       "oceano-primordial",
-      "pesquisa-arcana",
       "pesquisa-arcana",
       "pocao-mana",
       "pote-gula",
@@ -252,7 +252,6 @@ const DECKS = {
     mythic: "terrakhor-soberano",
     creatures: [
       "draco-rex-duas-cabeças",
-      "draco-rex-duas-cabeças",
       "e1-ferralite",
       "e2-ferradon",
       "e3-ferragron",
@@ -265,7 +264,8 @@ const DECKS = {
       "rinagron",
       "rinagron",
       "rinodon",
-      "rinodon"
+      "rinodon",
+      "ultra-rinagron"
     ],
     spells: [
       "armadura-nucleo-aço",
@@ -1917,6 +1917,12 @@ function renderPhaseButtons() {
 
 function passTurn() {
   if (!roomId) return;
+
+  const myHand = state.players[myRole]?.hand || [];
+  if (myHand.length > 5) {
+    showErrorToast("Atenção: Você terminou o turno com mais de 5 cartas na mão! Lembre-se de descartar o excedente.");
+  }
+
   socket.emit("passTurn", { roomId });
 }
 
