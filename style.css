@@ -245,8 +245,10 @@ input {
 .deck-select-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  padding: 12px;
+  box-sizing: border-box;
 }
 
 .deck-select-image-fallback {
