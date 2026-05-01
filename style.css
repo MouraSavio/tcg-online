@@ -961,28 +961,54 @@ input {
   position: relative;
   box-sizing: border-box;
 
-  background: rgba(10, 14, 22, 0.22); /* leve transparência */
-  border: 2px solid transparent;
-  border-radius: 18px;
+  /* Glassmorphism e Fundo do Berço */
+  background: rgba(12, 16, 24, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 14px;
 
+  /* Efeito de Profundidade (Entalhe na Mesa) */
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 8px 18px rgba(0, 0, 0, 0.28);
+    inset 0 6px 12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 2px rgba(0, 0, 0, 0.8),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.5);
+
+  transition: all 0.3s ease;
 }
+
+/* Borda com Gradiente Metálico usando Mask (Técnica Moderna) */
 .zone::before {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("assets/ui/boards/zone-frame.png");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  background-position: center;
+  border-radius: 14px;
+  padding: 2px; /* Espessura da borda */
+  background: linear-gradient(135deg, rgba(163, 193, 235, 0.4) 0%, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 0) 65%, rgba(163, 193, 235, 0.15) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
   pointer-events: none;
   z-index: 1;
 }
 
+.mythic-zone {
+  background: rgba(30, 15, 15, 0.55);
+  box-shadow:
+    inset 0 6px 12px rgba(0, 0, 0, 0.7),
+    inset 0 1px 2px rgba(0, 0, 0, 0.9),
+    inset 0 -1px 2px rgba(255, 209, 102, 0.15),
+    0 0 15px rgba(255, 209, 102, 0.1);
+  animation: mythicPulse 4s infinite alternate ease-in-out;
+}
+
 .mythic-zone::before {
-  background-image: url("assets/ui/boards/zone-mythic-frame.png");
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.9) 0%, rgba(255, 87, 34, 0.2) 40%, rgba(255, 87, 34, 0) 60%, rgba(255, 209, 102, 0.6) 100%);
+}
+
+@keyframes mythicPulse {
+  0% { box-shadow: inset 0 6px 12px rgba(0,0,0,0.7), inset 0 1px 2px rgba(0,0,0,0.9), inset 0 -1px 2px rgba(255,209,102,0.15), 0 0 10px rgba(255,209,102,0.05); }
+  100% { box-shadow: inset 0 6px 12px rgba(0,0,0,0.7), inset 0 1px 2px rgba(0,0,0,0.9), inset 0 -1px 2px rgba(255,209,102,0.35), 0 0 20px rgba(255,209,102,0.25); }
 }
 
 .zone > * {
@@ -992,16 +1018,23 @@ input {
 
 .zone-label {
   position: absolute !important;
-  top: 12px;
+  top: 14px;
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 1px 2px rgba(0, 0, 0, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.35);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   pointer-events: none;
   z-index: 10;
+}
+
+.mythic-zone .zone-label {
+  color: rgba(255, 209, 102, 0.6);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9), 0 0 8px rgba(255, 209, 102, 0.2);
 }
 
 .zone .card {
@@ -1503,8 +1536,12 @@ input {
 }
 
 .drop-hover {
-  border-color: #ffd166 !important;
-  box-shadow: inset 0 0 0 2px rgba(255, 209, 102, 0.6);
+  border-color: transparent !important;
+  box-shadow: inset 0 0 0 2px rgba(255, 209, 102, 0.8), 0 0 15px rgba(255, 209, 102, 0.3) !important;
+  background: rgba(255, 209, 102, 0.08) !important;
+}
+.drop-hover::before {
+  display: none !important;
 }
 
 /* Animações Polidas - Dado e Moeda */
