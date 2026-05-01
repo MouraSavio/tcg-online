@@ -17,8 +17,8 @@ const audioManager = {
       cartaZona: "assets/sounds/carta-zona.mp3",
       criaturaInvocacao: "assets/sounds/criatura-invocacao.mp3",
       magiaAtivacao: "assets/sounds/magia-ativacao.mp3",
-      cura: "assets/sounds/cura.mp3",
-      dano: "assets/sounds/dano.mp3",
+      vida: "assets/sounds/vida.mp3",
+      pa: "assets/sounds/pa-som.mp3",
       vitoria: "assets/sounds/vitoria.mp3",
       derrota: "assets/sounds/derrota.mp3"
     };
@@ -1101,6 +1101,56 @@ function updatePerspectiveLabels() {
     updateHudPerspective();
   updateChatPerspectiveProfile();
 }
+function animateNumberAndGlow(el, targetVal, type = "hp") {
+  if (!el) return;
+  const currentTarget = el.dataset.targetVal !== undefined ? parseInt(el.dataset.targetVal, 10) : parseInt(el.textContent, 10) || 0;
+
+  if (currentTarget === targetVal) {
+     if (!el.dataset.animating) {
+         el.textContent = String(targetVal);
+     }
+     return;
+  }
+
+  const startVal = parseInt(el.textContent, 10) || 0;
+  el.dataset.targetVal = String(targetVal);
+  el.dataset.animating = "true";
+
+  const classDown = type === "hp" ? "hp-anim-damage" : "pa-anim-spend";
+  const classUp = type === "hp" ? "hp-anim-heal" : "pa-anim-gain";
+
+  el.classList.remove(classDown, classUp);
+  el.getBoundingClientRect(); // Força reflow sem disparar avisos de sintaxe do ESLint/VS Code
+  if (targetVal < startVal) {
+      el.classList.add(classDown);
+  } else {
+      el.classList.add(classUp);
+  }
+
+  const duration = 600;
+  const start = performance.now();
+
+  function tick(time) {
+      const latestTarget = parseInt(el.dataset.targetVal, 10);
+      if (latestTarget !== targetVal) return; 
+
+      let elapsed = time - start;
+      if (elapsed > duration) elapsed = duration;
+      const ease = 1 - Math.pow(1 - elapsed / duration, 3); 
+      const runningVal = Math.round(startVal + (targetVal - startVal) * ease);
+      el.textContent = String(runningVal);
+
+      if (elapsed < duration) {
+          requestAnimationFrame(tick);
+      } else {
+          el.textContent = String(targetVal);
+          delete el.dataset.animating;
+          el.classList.remove(classDown, classUp);
+      }
+  }
+  requestAnimationFrame(tick);
+}
+
 function updateHudPerspective() {
   const topRole = getTopVisualRole();
   const bottomRole = getBottomVisualRole();
@@ -1123,15 +1173,15 @@ function updateHudPerspective() {
   const topHpEl = document.getElementById("mythicHp2");
   const bottomHpEl = document.getElementById("mythicHp1");
 
-  if (topHpEl) topHpEl.textContent = topIsP1 ? currentMythicHP1 : currentMythicHP2;
-  if (bottomHpEl) bottomHpEl.textContent = bottomIsP1 ? currentMythicHP1 : currentMythicHP2;
+  if (topHpEl) animateNumberAndGlow(topHpEl, topIsP1 ? currentMythicHP1 : currentMythicHP2, "hp");
+  if (bottomHpEl) animateNumberAndGlow(bottomHpEl, bottomIsP1 ? currentMythicHP1 : currentMythicHP2, "hp");
 
   // valores de PA
   const topPaEl = document.getElementById("paValue2");
   const bottomPaEl = document.getElementById("paValue1");
 
-  if (topPaEl) topPaEl.textContent = topIsP1 ? currentPA1 : currentPA2;
-  if (bottomPaEl) bottomPaEl.textContent = bottomIsP1 ? currentPA1 : currentPA2;
+  if (topPaEl) animateNumberAndGlow(topPaEl, topIsP1 ? currentPA1 : currentPA2, "pa");
+  if (bottomPaEl) animateNumberAndGlow(bottomPaEl, bottomIsP1 ? currentPA1 : currentPA2, "pa");
 
   // inputs de ganho padrão
   const topGainInput = document.getElementById("turnGain2");
@@ -1478,8 +1528,7 @@ function changeMythicHP(targetPlayer, operation, inputId = null) {
   if (isNaN(value) || value < 0) value = 0;
 
   if (value > 0) {
-    if (operation === "add") audioManager.play("cura");
-    else if (operation === "subtract") audioManager.play("dano");
+    audioManager.play("vida");
   }
 
   socket.emit("changeMythicHP", {
@@ -1495,8 +1544,7 @@ function updatePADisplay() {
 }
 
 function changePA(player, amount) {
-  if (amount > 0) audioManager.play("cura");
-  else if (amount < 0) audioManager.play("cura"); // Som temporário de "cura" para o consumo de PA
+  if (amount !== 0) audioManager.play("pa");
 
   socket.emit("changePA", {
     roomId,
@@ -1515,7 +1563,7 @@ function applyTurnGain(player, inputId = null) {
   let gain = parseInt(gainInput.value, 10);
   if (isNaN(gain) || gain < 0) gain = 0;
 
-  if (gain > 0) audioManager.play("cura");
+  if (gain > 0) audioManager.play("pa");
 
   socket.emit("changePA", {
     roomId,
@@ -2016,6 +2064,7 @@ function renderPile(zoneEl, playerKey, containerKey) {
   const count = document.createElement("div");
   count.className = "pile-count";
   count.textContent = pile.length;
+  count.textContent = String(pile.length);
 
   pileEl.appendChild(title);
   pileEl.appendChild(count);
@@ -2034,6 +2083,7 @@ function renderVisibleZone(zoneEl, playerKey, containerKey) {
     const countBadge = document.createElement("div");
     countBadge.className = "card-stack-count";
     countBadge.textContent = cards.length;
+    countBadge.textContent = String(cards.length);
     zoneEl.appendChild(countBadge);
   }
 }
@@ -2204,6 +2254,7 @@ function createCardElement(card, playerKey, containerKey, options = {}) {
     const markerBadge = document.createElement("div");
     markerBadge.className = "marker-badge";
     markerBadge.textContent = card.markers;
+    markerBadge.textContent = String(card.markers);
     cardEl.appendChild(markerBadge);
   }
 
@@ -2738,6 +2789,7 @@ function animateShuffle(element) {
 
   element.classList.remove("shuffling");
   void element.offsetWidth;
+  element.getBoundingClientRect(); // Força reflow (alternativa ao void)
   element.classList.add("shuffling");
 
   setTimeout(() => {
@@ -2756,6 +2808,7 @@ function animatePileShuffle(playerKey, zoneKey) {
 
   pileEl.classList.remove("shuffling");
   void pileEl.offsetWidth;
+  pileEl.getBoundingClientRect(); // Força reflow (alternativa ao void)
   pileEl.classList.add("shuffling");
 
   setTimeout(() => {
@@ -3556,6 +3609,7 @@ socket.on("diceRolled", ({ value }) => {
   setTimeout(() => {
     if (textEl) {
       textEl.textContent = value;
+      textEl.textContent = String(value);
       textEl.classList.add("result-text-pop");
     }
     if (diceImg) {
