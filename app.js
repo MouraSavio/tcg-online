@@ -1838,7 +1838,8 @@ function animateAttackFromPayload(payload) {
 
   if (!sourceEl || !targetEl) return;
 
-  animateAttackArrow(sourceEl, targetEl);
+  const loc = findCardLocation(payload.cardId);
+  animateAttackArrow(sourceEl, targetEl, loc ? loc.card : null);
 }
 function rollDice() {
   audioManager.play("clique");
@@ -2990,7 +2991,7 @@ function resolveAttack(targetPlayerKey, targetContainerKey) {
   renderBoard();
 }
 
-function animateAttackArrow(sourceEl, targetEl) {
+function animateAttackArrow(sourceEl, targetEl, card) {
   audioManager.play("ataque");
 
   clearAttackArrow();
@@ -3006,18 +3007,95 @@ function animateAttackArrow(sourceEl, targetEl) {
   const x2 = target.left + target.width / 2;
   const y2 = target.top + target.height / 2;
 
-  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-  
-  // Filtro de Brilho (Glow) para a flecha
-  const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-  filter.setAttribute("id", "attackGlow");
-  filter.innerHTML = `
+  let arrowColor = "#ff2d2d";
+  let trailStart = "rgba(255, 45, 45, 0)";
+  let trailMid = "rgba(255, 45, 45, 0.4)";
+  let trailEnd = "#ff2d2d";
+  let strokeWidth = "8";
+  let filterHtml = `
     <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
     <feMerge>
       <feMergeNode in="coloredBlur"/>
       <feMergeNode in="SourceGraphic"/>
     </feMerge>
   `;
+
+  if (card && card.type === "mythic") {
+    if (card.name === "ignil-imperador-chamas") {
+      arrowColor = "#fff59d";
+      trailStart = "rgba(255, 61, 0, 0)";
+      trailMid = "rgba(255, 61, 0, 0.7)";
+      trailEnd = "#ff9800";
+      strokeWidth = "14";
+      filterHtml = `
+        <feGaussianBlur stdDeviation="4" result="blur1"/>
+        <feGaussianBlur stdDeviation="8" result="blur2"/>
+        <feMerge>
+          <feMergeNode in="blur2"/>
+          <feMergeNode in="blur1"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      `;
+    } else if (card.name === "thalassor-mare-eterna") {
+      arrowColor = "#ffffff";
+      trailStart = "rgba(3, 169, 244, 0)";
+      trailMid = "rgba(3, 169, 244, 0.7)";
+      trailEnd = "#00bcd4";
+      strokeWidth = "12";
+      filterHtml = `
+        <feGaussianBlur stdDeviation="3" result="blur1"/>
+        <feGaussianBlur stdDeviation="6" result="blur2"/>
+        <feMerge>
+          <feMergeNode in="blur2"/>
+          <feMergeNode in="blur1"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      `;
+    } else if (card.name === "terrakhor-soberano") {
+      arrowColor = "#aed581";
+      trailStart = "rgba(93, 64, 55, 0)";
+      trailMid = "rgba(121, 85, 72, 0.9)";
+      trailEnd = "#8bc34a";
+      strokeWidth = "20";
+      filterHtml = `
+        <feGaussianBlur stdDeviation="2" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      `;
+    } else if (card.name === "daerikal-imperador-vento") {
+      arrowColor = "#ffffff";
+      trailStart = "rgba(167, 255, 235, 0)";
+      trailMid = "rgba(167, 255, 235, 0.5)";
+      trailEnd = "#1de9b6";
+      strokeWidth = "5";
+      filterHtml = `
+        <feGaussianBlur stdDeviation="4" result="blur1"/>
+        <feGaussianBlur stdDeviation="10" result="blur2"/>
+        <feMerge>
+          <feMergeNode in="blur2"/>
+          <feMergeNode in="blur1"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      `;
+    }
+  }
+
+  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+  
+  // Filtro de Brilho (Glow) para a flecha
+  const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+  filter.setAttribute("id", "attackGlow");
+  
+  // Solução para o VS Code: DOMParser evita o falso positivo de erro com innerHTML em SVGElement
+  const parser = new DOMParser();
+  const parsedFilter = parser.parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${filterHtml}</svg>`, "image/svg+xml");
+  if (parsedFilter.documentElement) {
+    while (parsedFilter.documentElement.firstChild) {
+      filter.appendChild(parsedFilter.documentElement.firstChild);
+    }
+  }
   defs.appendChild(filter);
 
   const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
@@ -3030,7 +3108,7 @@ function animateAttackArrow(sourceEl, targetEl) {
 
   const arrowPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
   arrowPath.setAttribute("d", "M0,0 L0,6 L9,3 z");
-  arrowPath.setAttribute("fill", "#ff2d2d");
+  arrowPath.setAttribute("fill", arrowColor);
 
   marker.appendChild(arrowPath);
   defs.appendChild(marker);
@@ -3039,25 +3117,34 @@ function animateAttackArrow(sourceEl, targetEl) {
   const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
   gradient.setAttribute("id", "trailGradient");
   gradient.setAttribute("gradientUnits", "userSpaceOnUse");
-  gradient.setAttribute("x1", x1);
-  gradient.setAttribute("y1", y1);
-  gradient.setAttribute("x2", x1);
-  gradient.setAttribute("y2", y1);
-  gradient.innerHTML = `
-    <stop offset="0%" stop-color="rgba(255, 45, 45, 0)" />
-    <stop offset="60%" stop-color="rgba(255, 45, 45, 0.4)" />
-    <stop offset="100%" stop-color="#ff2d2d" />
+  
+  // Convertendo variáveis numéricas para String explícita (para não dar erro no editor)
+  gradient.setAttribute("x1", String(x1));
+  gradient.setAttribute("y1", String(y1));
+  gradient.setAttribute("x2", String(x1));
+  gradient.setAttribute("y2", String(y1));
+  
+  const stopHtml = `
+    <stop offset="0%" stop-color="${trailStart}" />
+    <stop offset="60%" stop-color="${trailMid}" />
+    <stop offset="100%" stop-color="${trailEnd}" />
   `;
+  const parsedGradient = parser.parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${stopHtml}</svg>`, "image/svg+xml");
+  if (parsedGradient.documentElement) {
+    while (parsedGradient.documentElement.firstChild) {
+      gradient.appendChild(parsedGradient.documentElement.firstChild);
+    }
+  }
   defs.appendChild(gradient);
   svg.appendChild(defs);
 
   const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  line.setAttribute("x1", x1);
-  line.setAttribute("y1", y1);
-  line.setAttribute("x2", x1);
-  line.setAttribute("y2", y1);
+  line.setAttribute("x1", String(x1));
+  line.setAttribute("y1", String(y1));
+  line.setAttribute("x2", String(x1));
+  line.setAttribute("y2", String(y1));
   line.setAttribute("stroke", "url(#trailGradient)");
-  line.setAttribute("stroke-width", "8");
+  line.setAttribute("stroke-width", strokeWidth);
   line.setAttribute("stroke-linecap", "round");
   line.setAttribute("filter", "url(#attackGlow)");
   line.setAttribute("marker-end", "url(#arrowHead)");
@@ -3080,27 +3167,33 @@ function animateAttackArrow(sourceEl, targetEl) {
     const currentX = x1 + (x2 - x1) * progress;
     const currentY = y1 + (y2 - y1) * progress;
 
-    line.setAttribute("x2", currentX);
-    line.setAttribute("y2", currentY);
-    gradient.setAttribute("x2", currentX);
-    gradient.setAttribute("y2", currentY);
+    line.setAttribute("x2", String(currentX));
+    line.setAttribute("y2", String(currentY));
+    gradient.setAttribute("x2", String(currentX));
+    gradient.setAttribute("y2", String(currentY));
 
-    // Retarda o início da base da linha para criar um "Cometa" 
-    const tailProgress = Math.max(0, rawProgress - 0.25);
-    const easeTail = easeOutQuart(tailProgress * (1 / 0.75));
+    let tailDelay = 0.25;
+    if (card && card.type === "mythic") {
+      if (card.name === "thalassor-mare-eterna") tailDelay = 0.4;
+      if (card.name === "daerikal-imperador-vento") tailDelay = 0.15;
+      if (card.name === "terrakhor-soberano") tailDelay = 0.2;
+    }
+
+    const tailProgress = Math.max(0, rawProgress - tailDelay);
+    const easeTail = easeOutQuart(tailProgress * (1 / (1 - tailDelay)));
     
     const tailX = x1 + (x2 - x1) * easeTail;
     const tailY = y1 + (y2 - y1) * easeTail;
     
-    line.setAttribute("x1", tailX);
-    line.setAttribute("y1", tailY);
-    gradient.setAttribute("x1", tailX);
-    gradient.setAttribute("y1", tailY);
+    line.setAttribute("x1", String(tailX));
+    line.setAttribute("y1", String(tailY));
+    gradient.setAttribute("x1", String(tailX));
+    gradient.setAttribute("y1", String(tailY));
 
     if (rawProgress < 1) {
       requestAnimationFrame(step);
     } else {
-      triggerImpact(x2, y2, targetEl);
+      triggerImpact(x2, y2, targetEl, card);
       setTimeout(clearAttackArrow, 150); // Remove o rastro após o impacto
     }
   }
@@ -3108,9 +3201,17 @@ function animateAttackArrow(sourceEl, targetEl) {
   requestAnimationFrame(step);
 }
 
-function triggerImpact(x, y, targetEl) {
+function triggerImpact(x, y, targetEl, card) {
   const flash = document.createElement("div");
   flash.className = "impact-flash";
+
+  if (card && card.type === "mythic") {
+    if (card.name === "ignil-imperador-chamas") flash.classList.add("impact-fire");
+    if (card.name === "thalassor-mare-eterna") flash.classList.add("impact-water");
+    if (card.name === "terrakhor-soberano") flash.classList.add("impact-earth");
+    if (card.name === "daerikal-imperador-vento") flash.classList.add("impact-wind");
+  }
+
   flash.style.left = x + "px";
   flash.style.top = y + "px";
   flash.style.width = "50px";
@@ -3118,14 +3219,18 @@ function triggerImpact(x, y, targetEl) {
   document.body.appendChild(flash);
 
   if (targetEl) {
-    targetEl.classList.remove("target-shake");
+    targetEl.classList.remove("target-shake", "target-shake-earth");
     void targetEl.offsetWidth; // Reflow para reiniciar a animação
-    targetEl.classList.add("target-shake");
+    if (card && card.name === "terrakhor-soberano") {
+      targetEl.classList.add("target-shake-earth");
+    } else {
+      targetEl.classList.add("target-shake");
+    }
   }
 
   setTimeout(() => {
     if (flash.parentNode) flash.remove();
-    if (targetEl) targetEl.classList.remove("target-shake");
+    if (targetEl) targetEl.classList.remove("target-shake", "target-shake-earth");
   }, 400);
 }
 
