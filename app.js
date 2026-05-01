@@ -2024,10 +2024,18 @@ function renderPile(zoneEl, playerKey, containerKey) {
 
   const pileEl = document.createElement("div");
   pileEl.className = "pile";
-  pileEl.onclick = (event) => {
+  pileEl.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
     event.stopPropagation();
     openPileMenu(event.clientX, event.clientY, playerKey, containerKey);
-  };
+  });
+
+  pileEl.addEventListener("click", (event) => {
+    if (containerKey === "discardPile") {
+      event.stopPropagation();
+      openPileViewer(playerKey, containerKey);
+    }
+  });
 
   // Cria o volume 3D: limitamos até 40 cartas para a sombra não sair da tela. 
   // Multiplicamos por 0.5 pixels por carta.
