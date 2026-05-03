@@ -126,32 +126,42 @@ const SERVER_DECKS = {
       "ofensiva-quebrada"
     ]
   },
-  ferragon: {
+  ferragron: {
     mythic: "terrakhor-soberano",
 
     creatures: [
-      "draco-rex-duas-cabeças","ultra-rinagron",
-      "e1-ferralite","e2-ferradon","e3-ferragron",
-      "hipnodon","hipnodon",
-      "rex","rex",
-      "rex-ataque","rex-defesa",
-      "rinagron","rinagron",
-      "rinodon","rinodon"
+      "servo-evolucao", "servo-evolucao",
+      "e3-armagron",
+      "e2-argrond",
+      "e1-agon", "e1-agon",
+      "e3-dianamonto",
+      "e2-diamonto",
+      "e1-diamon", "e1-diamon",
+      "e1-ferralite", "e1-ferralite",
+      "e2-ferradon",
+      "e3-ferragron"
     ],
 
     spells: [
-      "armadura-nucleo-aço","bencao-milagrosa","compra-graciosa",
-      "evolucao-forcada","lupa-milagrosa","pesquisa-arcana",
-      "pisoteio-mortal","pocao-mana","pote-ambicao","pote-gula",
-      "quebra-feitico","renascimento-sagrado","retorno-fluxo-arcano",
-      "sede-poder","terra-sagrada"
+      "chave-evolucao", "chave-evolucao",
+      "evolucao-acelerada", "evolucao-acelerada",
+      "evolucao-forcada", "evolucao-forcada",
+      "pote-ambicao",
+      "pote-gula",
+      "retorno-evolucao", "retorno-evolucao",
+      "retorno-fluxo-arcano",
+      "oferta-abismo", "oferta-abismo",
+      "compra-graciosa",
+      "pisoteio-mortal",
+      "terra-sagrada"
     ],
 
     traps: [
-      "aprisionamento-eterno","chamado-cova","contragolpe",
-      "defesa-impenetravel","encerramento-forcado",
-      "julgamento-divino","ofensiva-quebrada",
-      "rajada-mortal","reversao-espelho","união-evolucao"
+      "ofensiva-quebrada", "ofensiva-quebrada",
+      "defesa-impenetravel", "defesa-impenetravel",
+      "encerramento-forcado", "contragolpe",
+      "reversao-espelho", "julgamento-divino",
+      "selamento-trapaca", "rajada-mortal"
     ]
   },
 
@@ -284,6 +294,38 @@ const SERVER_DECKS = {
       "ofensiva-quebrada",
       "reversao-espelho",
       "vinganca-onryo"
+    ]
+  },
+  slime: {
+    mythic: "grande-soberano-slime",
+    creatures: [
+      "slime-verde", "slime-verde",
+      "slime-azul", "slime-azul",
+      "slime-vermelho", "slime-vermelho",
+      "slime-roxo", "slime-roxo",
+      "slime-rosa", "slime-rosa",
+      "rainha-slime",
+      "rei-slime"
+    ],
+    spells: [
+      "campo-sagrado-slime",
+      "pesquisa-arcana", "pesquisa-arcana",
+      "sede-poder",
+      "pocao-mana", "pocao-mana",
+      "lupa-milagrosa",
+      "renascimento-sagrado",
+      "compra-graciosa",
+      "pote-ambicao",
+      "pote-gula",
+      "retorno-fluxo-arcano", "retorno-fluxo-arcano",
+      "oferta-abismo",
+      "arte-trevas", "arte-trevas"
+    ],
+    traps: [
+      "ofensiva-quebrada", "defesa-impenetravel", "encerramento-forcado",
+      "contragolpe", "reversao-espelho", "julgamento-divino",
+      "selamento-trapaca", "buraco-armadilha", "selamento-feitico",
+      "aprisionamento-eterno"
     ]
   }
 };
