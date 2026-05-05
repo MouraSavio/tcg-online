@@ -299,8 +299,8 @@ const SERVER_DECKS = {
   slime: {
     mythic: "grande-soberano-slime",
     creatures: [
-      "slime-verde", "slime-verde",
-      "slime-azul", "slime-azul",
+      "slime-verde", "slime-verde", "slime-verde",
+      "slime-azul", "slime-azul", "slime-azul",
       "slime-vermelho", "slime-vermelho",
       "slime-roxo", "slime-roxo",
       "slime-rosa", "slime-rosa",
