@@ -480,6 +480,7 @@ const state = {
   openMenu: null,
   pileViewer: null,
   statusEditor: null,
+  bossVideosPlayed: {},
   privatePiles: {
     p1: {
       deckPile: [],
@@ -990,6 +991,7 @@ function startSynchronizedGame(decks, matchState) {
   state.currentPhase = "IT";
   state.pileViewer = null;
   state.statusEditor = null;
+  state.bossVideosPlayed = {};
   remoteSelections.p1 = null;
   remoteSelections.p2 = null;
 
@@ -1707,6 +1709,66 @@ function buildAnimationCardElement(card, hidden) {
   return el;
 }
 
+const BOSS_VIDEOS = {
+  "e3-ferragron": "assets/animation/ferragron.mp4",
+  "eidralis-baleia-onirica": "assets/animation/baleia-onirica.mp4",
+  "fenix-primordial": "assets/animation/fenix-primordial.mp4",
+  "hipogrifo-tempestade": "assets/animation/grifo-tempestade.mp4",
+  "tifao": "assets/animation/tifao.mp4",
+  "e3-armagron": "assets/animation/armagron.mp4",
+  "rainha-harpia-tissaya": "assets/animation/rainha-harpia.mp4",
+  "primple-rei-sonhar": "assets/animation/rei-primple.mp4",
+  "kon-guarda-onirica": "assets/animation/urso-onirico.mp4"
+};
+
+function playBossVideo(videoSrc, onComplete) {
+  const overlay = document.createElement("div");
+  overlay.id = "bossVideoOverlay";
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.backgroundColor = "rgba(0, 0, 0, 0.95)";
+  overlay.style.zIndex = "10000";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  
+  const video = document.createElement("video");
+  video.src = videoSrc;
+  video.autoplay = true;
+  video.controls = false;
+  video.style.maxWidth = "100%";
+  video.style.maxHeight = "100%";
+  video.style.outline = "none";
+  
+  const skipBtn = document.createElement("button");
+  skipBtn.textContent = "Pular Animação";
+  skipBtn.style.position = "absolute";
+  skipBtn.style.bottom = "30px";
+  skipBtn.style.right = "30px";
+  skipBtn.style.zIndex = "10001";
+  skipBtn.style.padding = "10px 20px";
+  skipBtn.style.background = "rgba(0, 0, 0, 0.6)";
+  skipBtn.style.color = "white";
+  skipBtn.style.border = "1px solid rgba(255, 209, 102, 0.5)";
+  skipBtn.style.borderRadius = "8px";
+  skipBtn.style.cursor = "pointer";
+  skipBtn.style.fontWeight = "bold";
+  
+  const finish = () => {
+    if (overlay.parentNode) {
+      overlay.remove();
+      if (onComplete) onComplete();
+    }
+  };
+  
+  video.onended = finish;
+  skipBtn.onclick = finish;
+  
+  overlay.appendChild(video);
+  overlay.appendChild(skipBtn);
+  document.body.appendChild(overlay);
+}
+
 function animateCardTravel(payload) {
   if (!payload) return;
 
@@ -1805,26 +1867,38 @@ function animateCardTravel(payload) {
   });
 
   setTimeout(() => {
-    // Revela a carta grande na tela quando ela "pousa" no tabuleiro
-    if (isBoardZoneAndFaceUp) {
-      const ownerRole = payload.card?.ownerRole || payload.toPlayer;
-      const hydratedCard = hydrateServerCard(payload.card, ownerRole);
-      if (hydratedCard && hydratedCard.image) {
-        showLargeEffectImage(hydratedCard.image, hydratedCard.type, true);
-      }
-    }
-
     ghost.remove();
 
-    if (isBoardZone && payload.card && !payload.card.faceDown) {
-      recentHighlights[payload.card.id] = { type: payload.card.type, expires: Date.now() + 1200 };
-      const actualCardEl = document.getElementById(`card-${payload.card.id}`);
-      if (actualCardEl) {
-        actualCardEl.classList.add(`card-enter-${payload.card.type}`);
-        setTimeout(() => {
-          if (actualCardEl) actualCardEl.classList.remove(`card-enter-${payload.card.type}`);
-        }, 1200);
+    const finalizeLanding = () => {
+      if (isBoardZoneAndFaceUp) {
+        const ownerRole = payload.card?.ownerRole || payload.toPlayer;
+        const hydratedCard = hydrateServerCard(payload.card, ownerRole);
+        if (hydratedCard && hydratedCard.image) {
+          showLargeEffectImage(hydratedCard.image, hydratedCard.type, true);
+        }
       }
+
+      if (isBoardZone && payload.card && !payload.card.faceDown) {
+        recentHighlights[payload.card.id] = { type: payload.card.type, expires: Date.now() + 1200 };
+        const actualCardEl = document.getElementById(`card-${payload.card.id}`);
+        if (actualCardEl) {
+          actualCardEl.classList.add(`card-enter-${payload.card.type}`);
+          setTimeout(() => {
+            if (actualCardEl) actualCardEl.classList.remove(`card-enter-${payload.card.type}`);
+          }, 1200);
+        }
+      }
+    };
+
+    const cardName = payload.card?.name;
+    const isBossVideoAvailable = cardName && BOSS_VIDEOS[cardName];
+    const videoAlreadyPlayed = cardName && state.bossVideosPlayed[cardName];
+
+    if (isBoardZoneAndFaceUp && isBossVideoAvailable && !videoAlreadyPlayed) {
+      state.bossVideosPlayed[cardName] = true;
+      playBossVideo(BOSS_VIDEOS[cardName], finalizeLanding);
+    } else {
+      finalizeLanding();
     }
   }, 420);
 }
