@@ -252,6 +252,7 @@ const DECKS = {
     mythic: "terrakhor-soberano",
     creatures: [
       "servo-evolucao", "servo-evolucao",
+      "serva-evolucao", "serva-evolucao",
       "e3-armagron",
       "e2-argrond",
       "e1-agon", "e1-agon",
@@ -268,9 +269,9 @@ const DECKS = {
       "evolucao-forcada", "evolucao-forcada",
       "pote-ambicao",
       "pote-gula",
-      "retorno-evolucao", "retorno-evolucao",
+      "retorno-evolucao",
       "retorno-fluxo-arcano",
-      "oferta-abismo", "oferta-abismo",
+      "oferta-abismo",
       "compra-graciosa",
       "pisoteio-mortal",
       "terra-sagrada"
@@ -470,6 +471,49 @@ const DECKS = {
       "selamento-trapaca", "buraco-armadilha", "selamento-feitico",
       "aprisionamento-eterno"
     ]
+  },
+  folclore: {
+    displayName: "Deck Folclore",
+    mythic: "anhanga-espirito-primordial",
+    creatures: [
+      "boiacu",
+      "cuca",
+      "boto-cor-rosa", "boto-cor-rosa",
+      "sapo-cururu", "sapo-cururu",
+      "iara",
+      "lobisomem",
+      "mula-sem-cabeca",
+      "boitata",
+      "curupira", "curupira",
+      "saci-perere", "saci-perere"
+    ],
+    spells: [
+      "caldeirao-cuca",
+      "feitico-cuca",
+      "canto-hipnotico",
+      "travessura-saci",
+      "lanca-guardiao-floresta",
+      "noite-lua-cheia", "noite-lua-cheia",
+      "floresta-lenda",
+      "pocao-mana",
+      "sede-poder",
+      "pote-ambicao",
+      "pote-gula",
+      "retorno-fluxo-arcano",
+      "lupa-milagrosa",
+      "quebra-feitico",
+      "renascimento-sagrado"
+    ],
+    traps: [
+      "ofensiva-quebrada", "ofensiva-quebrada",
+      "defesa-impenetravel", "defesa-impenetravel",
+      "encerramento-forcado",
+      "contragolpe",
+      "reversao-espelho",
+      "julgamento-divino",
+      "selamento-trapaca",
+      "selamento-feitico"
+    ]
   }
 };
 
@@ -535,7 +579,8 @@ function getDeckBoxImage(deckKey) {
     "cassino-goblin": "deckbox-terra.png",
     vento: "deckbox-vento.png",
     espadachim: "deckbox-espadachim.png",
-    slime: "deckbox-slime.png"
+    slime: "deckbox-slime.png",
+    folclore: "deckbox-folclore.png"
   };
 
   const fileName = deckBoxMap[deckKey];
@@ -709,7 +754,8 @@ function getDeckIcon(deckKey) {
     ferragron: "⚙️",
     goblin: "🎰",
     vento: "🌪️",
-    slime: "🦠"
+    slime: "🦠",
+    folclore: "🌿"
   };
 
   return icons[deckKey] || "🃏";
@@ -1718,7 +1764,17 @@ const BOSS_VIDEOS = {
   "e3-armagron": "assets/animation/armagron.mp4",
   "rainha-harpia-tissaya": "assets/animation/rainha-harpia.mp4",
   "primple-rei-sonhar": "assets/animation/rei-primple.mp4",
-  "kon-guarda-onirica": "assets/animation/urso-onirico.mp4"
+  "kon-guarda-onirica": "assets/animation/urso-onirico.mp4",
+  "boiacu": "assets/animation/boiacu.mp4",
+  "akuma-ronin": "assets/animation/akuma-ronin.mp4",
+  "daizen-kenshin": "assets/animation/daizen.mp4",
+  "thorn-avatar-fenix": "assets/animation/thorn-avatar-fenix.mp4",
+  "e3-dianamonto": "assets/animation/dianamonto.mp4",
+  "kongar-devastador": "assets/animation/kongar-devastador.mp4",
+  "iara": "assets/animation/iara.mp4",
+  "cuca": "assets/animation/cuca.mp4",
+  "kojiro-mestre-espada": "assets/animation/kojiro.mp4",
+  "musashi-mestre-nitoryu": "assets/animation/musashi.mp4"
 };
 
 function playBossVideo(videoSrc, onComplete) {

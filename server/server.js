@@ -131,6 +131,7 @@ const SERVER_DECKS = {
 
     creatures: [
       "servo-evolucao", "servo-evolucao",
+      "serva-evolucao", "serva-evolucao",
       "e3-armagron",
       "e2-argrond",
       "e1-agon", "e1-agon",
@@ -148,18 +149,8 @@ const SERVER_DECKS = {
       "evolucao-forcada", "evolucao-forcada",
       "pote-ambicao",
       "pote-gula",
-      "retorno-evolucao", "retorno-evolucao",
-      "retorno-fluxo-arcano",
-      "oferta-abismo", "oferta-abismo",
-      "compra-graciosa",
-      "pisoteio-mortal",
-      "terra-sagrada"
-    ],
-
-    traps: [
-      "ofensiva-quebrada", "ofensiva-quebrada",
-      "defesa-impenetravel", "defesa-impenetravel",
-      "encerramento-forcado", "contragolpe",
+      "retorno-evolucao",
+      "defesa-impenetravelagolpe",
       "reversao-espelho", "julgamento-divino",
       "selamento-trapaca", "rajada-mortal"
     ]
@@ -326,6 +317,48 @@ const SERVER_DECKS = {
       "contragolpe", "reversao-espelho", "julgamento-divino",
       "selamento-trapaca", "buraco-armadilha", "selamento-feitico",
       "aprisionamento-eterno"
+    ]
+  },
+  folclore: {
+    mythic: "anhanga-espirito-primordial",
+    creatures: [
+      "boiacu",
+      "cuca",
+      "boto-cor-rosa", "boto-cor-rosa",
+      "sapo-cururu", "sapo-cururu",
+      "iara",
+      "lobisomem",
+      "mula-sem-cabeca",
+      "boitata",
+      "curupira", "curupira",
+      "saci-perere", "saci-perere"
+    ],
+    spells: [
+      "caldeirao-cuca",
+      "feitico-cuca",
+      "canto-hipnotico",
+      "travessura-saci",
+      "lanca-guardiao-floresta",
+      "noite-lua-cheia", "noite-lua-cheia",
+      "floresta-lenda",
+      "pocao-mana",
+      "sede-poder",
+      "pote-ambicao",
+      "pote-gula",
+      "retorno-fluxo-arcano",
+      "lupa-milagrosa",
+      "quebra-feitico",
+      "renascimento-sagrado"
+    ],
+    traps: [
+      "ofensiva-quebrada", "ofensiva-quebrada",
+      "defesa-impenetravel", "defesa-impenetravel",
+      "encerramento-forcado",
+      "contragolpe",
+      "reversao-espelho",
+      "julgamento-divino",
+      "selamento-trapaca",
+      "selamento-feitico"
     ]
   }
 };
