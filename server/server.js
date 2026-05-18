@@ -144,15 +144,32 @@ const SERVER_DECKS = {
     ],
 
     spells: [
-      "chave-evolucao", "chave-evolucao",
-      "evolucao-acelerada", "evolucao-acelerada",
-      "evolucao-forcada", "evolucao-forcada",
+      "chave-evolucao",
+      "chave-evolucao",
+      "evolucao-acelerada",
+      "evolucao-acelerada",
+      "evolucao-forcada",
+      "evolucao-forcada",
       "pote-ambicao",
       "pote-gula",
       "retorno-evolucao",
-      "defesa-impenetravelagolpe",
-      "reversao-espelho", "julgamento-divino",
-      "selamento-trapaca", "rajada-mortal"
+      "retorno-fluxo-arcano",
+      "oferta-abismo",
+      "compra-graciosa",
+      "pisoteio-mortal",
+      "terra-sagrada"
+    ],
+    traps: [
+      "ofensiva-quebrada",
+      "ofensiva-quebrada",
+      "defesa-impenetravel",
+      "defesa-impenetravel",
+      "encerramento-forcado",
+      "contragolpe",
+      "reversao-espelho",
+      "julgamento-divino",
+      "selamento-trapaca",
+      "rajada-mortal"
     ]
   },
 
