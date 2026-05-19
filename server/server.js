@@ -362,6 +362,7 @@ const SERVER_DECKS = {
       "sede-poder",
       "pote-ambicao",
       "pote-gula",
+      "pesquisa-arcana",
       "retorno-fluxo-arcano",
       "lupa-milagrosa",
       "quebra-feitico",
