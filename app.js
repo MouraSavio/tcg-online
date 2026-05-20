@@ -1774,6 +1774,7 @@ const BOSS_VIDEOS = {
   "kongar-devastador": "assets/animation/kongar-devastador.mp4",
   "iara": "assets/animation/iara.mp4",
   "cuca": "assets/animation/cuca.mp4",
+  "boitata": "assets/animation/boitata.mp4",
   "kojiro-mestre-espada": "assets/animation/kojiro.mp4",
   "musashi-mestre-nitoryu": "assets/animation/musashi.mp4"
 };
